@@ -1,0 +1,4 @@
+/* Localized versions of Info.plist keys */
+
+CFBundleName = "EyeTV";
+NSHumanReadableCopyright = "© Jon A. Christopher, 2008";
