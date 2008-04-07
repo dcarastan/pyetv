@@ -3,7 +3,7 @@ kill:
 	kill `ps -aex | grep "Front Row" | awk '{print $$1}'`
 	kill `ps -aex | grep Screen | awk '{print $$1}'`
 
-clean:
+clean::
 	rm -rf build dist
 
 real: clean
