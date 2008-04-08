@@ -1,3 +1,7 @@
+NAME=PyeTV
+VERSION=1.0
+IMGNAME=${NAME}-${VERSION}
+
 kill:
 #	python setup.py py2app -A
 	kill `ps -aex | grep "Front Row" | awk '{print $$1}'`
@@ -16,6 +20,13 @@ test:
 	python test.py
 
 tar:
-	pushd ..; tar -czvf PyeTV-${VERSION}.tar.gz PyeTV; popd
+	pushd ..; tar -czvf ${IMGNAME}.tar.gz PyeTV; popd
 
-dist:  real tar
+installers:
+	osacompile -o dist/Install\ PyeTV.app Install.applescript
+	osacompile -o dist/UnInstall\ PyeTV.app UnInstall.applescript
+
+dmg: installers
+		cd dist; rm *.dmg*; hdiutil create -fs HFS+ -format UDBZ -volname ${IMGNAME} -srcfolder . ${IMGNAME}
+
+dist:  clean real dmg
