@@ -12,6 +12,6 @@ do shell script "cp -Rfp " & path_ & "/EyeTV.frappliance /System/Library/CoreSer
 do shell script "cp /Applications/EyeTV.app/Contents/Resources/eyetv.icns /System/Library/CoreServices/Front\\ Row.app/Contents/PlugIns/EyeTV.frappliance/Contents/Resources/ApplianceIcon.png" with administrator privileges
 
 --terminate Front Row so that it will pick up changes
-do shell script "killall Front\\ Row"
+do shell script "killall Front\\ Row 2>/dev/null; /usr/bin/true"
 
 display dialog "PyeTV installed" buttons {"Ok"}
