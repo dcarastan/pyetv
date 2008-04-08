@@ -105,6 +105,12 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
         self.log("GetChannelStr done")
         return ret
 
+    def GetMarkerCount(self):
+        self.log("GetMarkerCount called")
+        return len(self.rec.markers.get())
+
+
+
 
 class EyeTV(PyFR.Utilities.ControllerUtilities):
     # comment this out for debugging

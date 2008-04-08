@@ -5,6 +5,7 @@
 #  Copyright 2008 Jon A Christopher. All rights reserved.
 #
 
+import os, time
 import objc
 from PyFR import *
 
@@ -29,23 +30,6 @@ def log(s):
 #end
 ######################################################################
 
-
-#is the fullscreen menu up in EyeTV
-def MenuGone():
-    log("In MenuGone()")
-    return not ETV.IsFullScreen()
-
-def InstallExitHandler(controller):
-    time.sleep(1.0) # allow time for fs menu to stabilize before installing exit handler
-    controller.setExitConditionTest(MenuGone)
-
-
-COMSKIP_IS_ON="ON"
-def HasSkipFile(arg):
-    return "Not Found"
-
-
-################################################################################
 
 class RecordingsMenu(PyFR.MenuController.Menu):
     def GetRightText(self):
@@ -235,10 +219,21 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         if idx==2:
             log("deletion request")
             return self.ConfirmDeleteRecordingDialog(controller, rec)
-        #if idx==3:
-        #    log("comskip toggle request")
-        #if idx==4:
-        #    log("skipfile scan request")
+        if idx==3:
+            log("comskip toggle request")
+            if self.AppRunning("ComSkipper"):
+                os.system("killall ComSkipper &")
+            else:
+                os.system("/Library/Application\ Support/ETVComskip/ComSkipper.app/Contents/MacOS/ComSkipper &")
+            time.sleep(0.5)
+        if idx==4:
+            log("MarkCommercials request")
+            log("/Library/Application\ Support/ETVComskip/MarkCommercials.app/Contents/MacOS/MarkCommercials --log %s &" % rec.rec.unique_ID.get())
+            os.system("/Library/Application\ Support/ETVComskip/MarkCommercials.app/Contents/MacOS/MarkCommercials --log %s &" % rec.rec.unique_ID.get())
+
+        if idx==3 or idx==4:
+            dlg=self.GetRecordingOptionsDialog(rec)
+            controller.stack().swapController_(dlg)
 
         # if we return true, we'll pop the controller and back up past the option dialog
         return False
@@ -257,21 +252,45 @@ class ETVMenuController(PyFR.MenuController.MenuController):
             dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
             
         return controller.stack().pushController_(dlg)
-        
-    def RecordingOptionsDialog(self, controller, rec):
-        log("in recording options dialog")
+
+    def AppRunning(self, appname):
+        process = os.popen("ps x | grep %s | grep -v grep" % appname).read()
+        if process:
+            return True
+        return False
+
+    def GetRecordingOptionsDialog(self, rec):
         pos=rec.GetPlaybackPosition(True)
         end=rec.GetDuration(True)
+
         options=[ PyFR.OptionDialog.OptionItem("Play @ %s / %s" % (pos,end), rec),
                   PyFR.OptionDialog.OptionItem("Restart", rec),
                   PyFR.OptionDialog.OptionItem("Delete", rec)
                   #PyFR.OptionDialog.OptionItem("Comskip On/Off", rec),
                   #PyFR.OptionDialog.OptionItem("Scan file", rec)
                   ]
-                  
+        if os.path.exists("/Library/Application Support/ETVComskip/ComSkipper.app") and \
+                os.path.exists("/Library/Application Support/ETVComskip/MarkCommercials.app"):
+            if self.AppRunning("ComSkipper"):
+                comskip_state="ComSkipper                      [On]"
+            else:
+                comskip_state="ComSkipper                      [Off]"
+
+            options.append(PyFR.OptionDialog.OptionItem(comskip_state, rec))
+            if rec.GetMarkerCount()==0:
+                if self.AppRunning("MarkCommercials"):
+                    options.append(PyFR.OptionDialog.OptionItem("Mark Commercials    [Running]", rec))
+                else:
+                    options.append(PyFR.OptionDialog.OptionItem("Mark Commercials", rec))
+
         title=rec.GetTitle()+ ": " + rec.GetEpisode() + " " + str(rec.GetStartTime())
         dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Recording options", options, self.RecordingOptionsDialogHandler)
         dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
+        return dlg
+
+    def RecordingOptionsDialog(self, controller, rec):
+        log("in recording options dialog")
+        dlg=self.GetRecordingOptionsDialog(rec)
         return controller.stack().pushController_(dlg)
 
 
