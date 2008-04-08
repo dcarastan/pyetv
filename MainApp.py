@@ -2,17 +2,21 @@
 #  main.py
 #  FrontPython
 #
-#  Created by garion on 12/15/07.
-#  Copyright __MyCompanyName__ 2007. All rights reserved.
+#  Copyright 2008 Jon A Christopher. All rights reserved.
 #
 
-from  PyFR import *
-from  PyFR import *
-from  PyFR import *
-from  PyFR import *
-from  PyFR import *
+import objc
+from PyFR import *
 
 from PyFR.BackRow import *
+
+import PyFR.Appliance 
+import PyFR.WaitController
+import PyFR.MenuController
+import PyFR.Utilities
+import PyFR.Debugging
+import PyFR.OptionDialog
+
 from etv import ETV
 import string
 
@@ -20,7 +24,8 @@ import string
 # local logging
 import Foundation
 def log(s):
-    Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
+    #Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
+    pass
 #end
 ######################################################################
 
@@ -42,55 +47,78 @@ def HasSkipFile(arg):
 
 ################################################################################
 
-class RecordingsMenu(Menu):
+class RecordingsMenu(PyFR.MenuController.Menu):
     def GetRightText(self):
         return str(len(self.items) - 1)
 
 ################################################################################
 
-class ETVWaitController(WaitController, ControllerUtilities):
+class ETVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.ControllerUtilities):
     def initWithStartup_exitCond_(self, startup=None, exitCond=None):
         log("initWithStartup_exitCond_")
         self.tickCount=0
         self.startup=startup
         self.exitCond=exitCond
-        return WaitController.initWithText_(self, "Launching EyeTV")
+        return PyFR.WaitController.WaitController.initWithText_(self, "Launching EyeTV")
 
     def PyFR_start(self):
+        log("PyFR_start called_")
+        self.tickCount = 0
+        if self.startup is not None:
+            self.call_startup = True
+        else:
+            self.call_startup = False
         self.launchApp( '/Applications/EyeTV.app')
 
     def AppShouldExit(self):
         self.tickCount = self.tickCount+1
 
-        wait_ticks=16
+#         a=PyFR.Utilities.ControllerUtilities();
+#         if self.tickCount < 100:
+#             a.disableObjCCapture() # call this to to enable flushing cache!
+#             #a.enableObjCCapture()
+
+#         # re-enable logging after ~20 minutes so we can catch the exit of FrontRow
+#         if self.tickCount >= 4780:
+#             a.disableObjCCapture() # call this to to enable flushing cache!
+#             a.enableObjCCapture()
 
         # tune these parameters
-        if self.tickCount < wait_ticks:
-            log("App not stabilized")
-            return False  # not stabilized yet
-        elif self.tickCount == wait_ticks and self.startup is not None:
-            log("App::startup")
-            self.startup()
-            return False
-        elif self.tickCount < wait_ticks*2:
-            log("App::post-startup")
-            return False
-        elif self.exitCond is not None:
+        wait_before_calling_startup = 1
+        wait_before_exit_ticks=20
+
+        # possibly call startup code
+        if self.call_startup and self.tickCount >= wait_before_calling_startup:
+            try:
+                self.startup()
+                self.call_startup = False
+            except:
+                log("App::startup failed with tickCount=%d" % self.tickCount)
+                pass
+
+        # give EyeTV a chance to stabilize, and then disable FrontRow's annoying auto-exit feature
+        # so that we can get back here no matter how long the recording is!
+        if self.tickCount ==wait_before_exit_ticks: 
+            AutoQuitManager = objc.lookUpClass("FRAutoQuitManager")
+            AutoQuitManager.sharedManager().setAutoQuitEnabled_(False)
+
+        # there's no startup function, so just wait for stabilization first
+        if self.exitCond is not None and self.tickCount > wait_before_exit_ticks: 
+            log("calling exitCond(), tickCount=%d" % self.tickCount)
             return not self.exitCond()
         return False
+
 
     def AboutToHideFR(self):
         pass
 
     def FRWasShown(self):
-        pass
-
-
-
+        log("**************** FRWasShown *****************");
+        self.stack().popController()
 
 ################################################################################
 
-class ETVMenuController(MenuController):
+class ETVMenuController(PyFR.MenuController.MenuController):
     
     def GetRecordingMetadata(self, controller, rec):
         mdc=BRMetadataControl.alloc().init()
@@ -138,10 +166,24 @@ class ETVMenuController(MenuController):
             root.AddItem(submenu)
             for ep in series[s]:
                 epstr=ep.GetEpisodeAndDate()
-                item=MenuItem(epstr, self.RecordingOptionsDialog, ep, self.GetRecordingMetadata)
+                item=PyFR.MenuController.MenuItem(epstr, self.RecordingOptionsDialog, ep, self.GetRecordingMetadata)
                 submenu.AddItem(item)
-            item=MenuItem("Delete all",self.ConfirmDeleteRecordingDialog, series[s])
+            item=PyFR.MenuController.MenuItem("Delete all",self.ConfirmDeleteRecordingDialog, series[s])
             submenu.AddItem(item)
+        return root
+
+
+    def PlayChannel(self, controller, chan):
+        newCon=ETVWaitController.alloc().initWithStartup_exitCond_(chan.Play,ETV.IsPlaying)
+        return controller.stack().pushController_(newCon)
+
+    def MakeChannelsMenu(self):
+        chan=ETV.GetChannels()
+        root=PyFR.MenuController.Menu("Channels",[])
+        for c in chan:
+            chstr=c.GetName()
+            item=PyFR.MenuController.MenuItem(chstr, self.PlayChannel, c)
+            root.AddItem(item)
         return root
 
     def DeleteEntry(self, rec, doPop):
@@ -158,33 +200,34 @@ class ETVMenuController(MenuController):
                             log("removing series menu")
                             self.recordings_menu.items.remove(series_menu)
                             if doPop:
-                                con=MenuController.alloc().initWithMenu_(self.recordings_menu)
+                                con=PyFR.MenuController.MenuController.alloc().initWithMenu_(self.recordings_menu)
                                 self.stack().replaceControllersAboveLabel_withController_("EyeTV",con)
                         else:
                             log("removing episode from series menu")
                             series_menu.items.remove(ep_menu_item)
                             if doPop:
-                                con=MenuController.alloc().initWithMenu_(series_menu)
+                                con=PyFR.MenuController.MenuController.alloc().initWithMenu_(series_menu)
                                 self.stack().replaceControllersAboveLabel_withController_("EyeTV Recordings",con)
-                        #ETV.DeleteRecording(rec)
+                        ETV.DeleteRecording(rec)
                         return False # don't pop
 
-    def ConfirmDeleteRecordingDialogHandler(self, controller, idx, rec):
+    def ConfirmDeleteRecordingDialogHandler(self, controller, idx, item):
         log("ConfirmDeleteRecordingDialogHandler")
-
+        rec=item.data
         if idx==0:
             if isinstance(rec,list):
                 for r in rec:
                     self.DeleteEntry(r, False)
-                con=MenuController.alloc().initWithMenu_(self.recordings_menu)
+                con=PyFR.MenuController.MenuController.alloc().initWithMenu_(self.recordings_menu)
                 self.stack().replaceControllersAboveLabel_withController_("EyeTV",con)
             else:
                 self.DeleteEntry(rec, True)            
             return False
         return True
             
-    def RecordingOptionsDialogHandler(self, controller, idx, rec):
+    def RecordingOptionsDialogHandler(self, controller, idx, item):
         log("RecordingOptionsDialogHandler")
+        rec=item.data
         if idx==0 or idx==1:
             ETV.SetCurrentRecording(rec,idx==1)
             newCon=ETVWaitController.alloc().initWithStartup_exitCond_(ETV.PlayCurrentRecording,ETV.IsPlaying)
@@ -192,24 +235,25 @@ class ETVMenuController(MenuController):
         if idx==2:
             log("deletion request")
             return self.ConfirmDeleteRecordingDialog(controller, rec)
-        if idx==3:
-            log("comskip toggle request")
-        if idx==4:
-            log("skipfile scan request")
+        #if idx==3:
+        #    log("comskip toggle request")
+        #if idx==4:
+        #    log("skipfile scan request")
 
         # if we return true, we'll pop the controller and back up past the option dialog
         return False
 
     def ConfirmDeleteRecordingDialog(self, controller, rec):
         log("in confirm delete recordings dialog")
-        options=[ "Yes", "No" ]
+        options=[ PyFR.OptionDialog.OptionItem("Yes",rec), 
+                  PyFR.OptionDialog.OptionItem("No",rec) ]
         if isinstance(rec,list):
             title="Are you sure you want to delete %d recordings from %s?" % (len(rec),rec[0].GetTitle())
-            dlg=OptionDialog.alloc().initWithTitle_Items_Handler_UserData_("Delete recording(s):", options, self.ConfirmDeleteRecordingDialogHandler, rec)
+            dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Delete recording(s):", options, self.ConfirmDeleteRecordingDialogHandler)
             dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
         else:
             title="Are you sure you want to delete '" + rec.GetTitle()+ ": " + rec.GetEpisode() + " " + str(rec.GetStartTime()) + "' ?"
-            dlg=OptionDialog.alloc().initWithTitle_Items_Handler_UserData_("Delete recording(s):", options, self.ConfirmDeleteRecordingDialogHandler, rec)
+            dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Delete recording(s):", options, self.ConfirmDeleteRecordingDialogHandler)
             dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
             
         return controller.stack().pushController_(dlg)
@@ -218,14 +262,15 @@ class ETVMenuController(MenuController):
         log("in recording options dialog")
         pos=rec.GetPlaybackPosition(True)
         end=rec.GetDuration(True)
-        options=[ "Play @ %s / %s" % (pos,end),
-                  "Restart",
-                  "Delete",
-                  "coming soon: Comskip [%s]" % COMSKIP_IS_ON,
-                  "coming soon: SkipFile [%s]" % HasSkipFile(rec) ]  
-
+        options=[ PyFR.OptionDialog.OptionItem("Play @ %s / %s" % (pos,end), rec),
+                  PyFR.OptionDialog.OptionItem("Restart", rec),
+                  PyFR.OptionDialog.OptionItem("Delete", rec)
+                  #PyFR.OptionDialog.OptionItem("Comskip On/Off", rec),
+                  #PyFR.OptionDialog.OptionItem("Scan file", rec)
+                  ]
+                  
         title=rec.GetTitle()+ ": " + rec.GetEpisode() + " " + str(rec.GetStartTime())
-        dlg=OptionDialog.alloc().initWithTitle_Items_Handler_UserData_("Recording options", options, self.RecordingOptionsDialogHandler, rec)
+        dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Recording options", options, self.RecordingOptionsDialogHandler)
         dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
         return controller.stack().pushController_(dlg)
 
@@ -245,33 +290,36 @@ class ETVMenuController(MenuController):
         log("Initing recordings")
         self.recordings_menu=self.MakeRecordingsMenu()
         log("Initing menus")
-        self.menu=Menu("EyeTV",
+        self.menu=PyFR.MenuController.Menu("EyeTV",
                   [
                 self.recordings_menu,
-                MenuItem("Enter EyeTV",   self.StartETV),
-                MenuItem("Program guide", self.StartETVGuide)
-                #            ,MenuItem("Comskip off",   ShowGuide_MenuHandler)
-                #            ,MenuItem("Comskip off",   ShowGuide_MenuHandler)
-                #            ,MenuItem("Option dialog",   testOptionDialogTest, "Text test")
-                #            ,MenuItem("Text test",   TestText_MenuHandler, "Text test")
+                self.MakeChannelsMenu(),
+                PyFR.MenuController.MenuItem("Enter EyeTV",   self.StartETV),
+                PyFR.MenuController.MenuItem("Program guide", self.StartETVGuide)
+                #            ,PyFR.MenuController.MenuItem("Comskip off",   ShowGuide_MenuHandler)
+                #            ,PyFR.MenuController.MenuItem("Comskip off",   ShowGuide_MenuHandler)
+                #            ,PyFR.MenuController.MenuItem("Option dialog",   testOptionDialogTest, "Text test")
+                #            ,PyFR.MenuController.MenuItem("Text test",   TestText_MenuHandler, "Text test")
                 ])
 
-        ac=MenuController.initWithMenu_(self, self.menu)
+        ac=PyFR.MenuController.MenuController.initWithMenu_(self, self.menu)
         log("Done initing menus")
         return ac
         
 
 
-class RUIPythonAppliance( Appliance ):
+class RUIPythonAppliance( PyFR.Appliance.Appliance ):
 
     def getController(self):
         self.log("**************************************************")
         self.log("Appliance controller starting, Enabling logger")
-        self.a=EnableObjcLogger()
+        #a=PyFR.Utilities.ControllerUtilities();
+        #a.enableObjCCapture() # call this to to enable flushing cache!
         #self.log("enabled")
 
         ret=ETVMenuController.alloc().init()
         return ret
+
 
 
 
