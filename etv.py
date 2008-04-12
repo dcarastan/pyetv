@@ -56,6 +56,18 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
         self.log("GetEpisode done")
         return ret
 
+    def GetPreviewImagePath(self):
+        imgpath=""
+        try:
+            loc=self.rec.location.get()
+            f=loc.file.path
+            f=f[:-6]+"tiff"
+            if len(f)>0:
+                imgpath=f
+        except:
+            pass
+        return imgpath
+
     def GetStartTime(self):
         self.log("GetStartTime called")
         ret = self.rec.start_time.get()

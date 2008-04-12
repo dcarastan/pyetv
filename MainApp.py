@@ -102,13 +102,35 @@ class ETVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Contr
 
 ################################################################################
 
-class ETVMenuController(PyFR.MenuController.MenuController):
-    
-    def GetRecordingMetadata(self, controller, rec):
-        mdc=BRMetadataControl.alloc().init()
-        mdc.setTitle_(rec.GetTitle())
-        mdc.setSummary_(rec.GetDescription())
+class PyeTVMediaAsset(BRSimpleMediaAsset):
+    def initWithRecording_(self, rec):
+        log("PyeTVMediaAsset inited for rec %s" % rec.GetTitle());
+        BRSimpleMediaAsset.initWithMediaURL_(self,"")
+        self.rec=rec
+        self.firstTime=True
+        return self
 
+    def coverArt(self):
+        log("PyeTVMediaAsset::coverArt")
+        return BRImage.imageWithPath_(self.rec.GetPreviewImagePath())
+
+    # the first time this is called, it's apparently being asked if it conforms to a BRMediaAsset protocol.  The next time, a collection.
+    def conformsToProtocol_(self, protocol):
+         log("PyeTVMediaAsset::conformsToProtocol: %s" % repr(protocol))
+         if self.firstTime:
+             self.firstTime=False
+             return True
+         return False
+
+class PyeTVMetadataPopulator(NSObject):
+    def init(self):
+        NSObject.init(self);
+        return self
+
+    def populateLayer_fromAsset_(self, layer, asset):
+        log("We want to do magic stuff here for layer %s and asset %s" % (repr(layer), repr(asset)))
+        layer.setTitle_(asset.rec.GetTitle())
+        layer.setSummary_(asset.rec.GetDescription())
         labels=[
             "Episode",
             "Channel",
@@ -116,14 +138,61 @@ class ETVMenuController(PyFR.MenuController.MenuController):
             "Start time"
             ]
         data=[
-            rec.GetEpisode(),
-            rec.GetChannelStr(),
-            rec.GetDuration(True),
-            str(rec.GetStartTime())
+            asset.rec.GetEpisode(),
+            asset.rec.GetChannelStr(),
+            asset.rec.GetDuration(True),
+            str(asset.rec.GetStartTime())
             ]
+        layer.setMetadata_withLabels_(data,labels)
+        return
 
-        mdc.setMetadata_withLabels_(data,labels)
-        return mdc
+    def axMetadataFromAsset_(self, asset):
+        log("called axMetadataFromAsset %s" % repr(asset))
+        return None
+
+# custom metadata populator factory which will return a populator which understands EyeTV recordings
+class PyeTVMetadataPopulatorFactory(BRSingleton):
+    __Instance = None
+
+    def init(self):
+        __Instance=self
+        self.pop=PyeTVMetadataPopulator.alloc().init()
+        return BRSingleton.init(self)
+
+    # Note: this isn't really a good singleton implementation, but it's good enough for our purposes here
+    @classmethod
+    def singleton(self):
+        return self.__Instance
+
+    def populatorForAsset_(self, asset):
+        return self.pop
+
+
+class PyeTVPreviewMetadataController(BRMetadataPreviewController):
+    def initWithRecording_(self, rec):
+        BRMetadataPreviewController.init(self)
+        asset=PyeTVMediaAsset.alloc().initWithRecording_(rec)
+        self.setAsset_(asset)
+        self.setShowsMetadataImmediately_(True) # could comment this out for a bigger look at the screenshot, but the md is more important
+        return self
+
+    def _updateMetadataLayer(self):
+        # create temporary populator factory and replace standard one ---
+        # I don't know how to get the standard populator to properly identify the asset,
+        # and even if I did, one of the pre-defined assets probably wouldn't populate with the fields I want!
+
+        # and yes, this is a horrible abuse of setSingleton_.
+        log("PyeTVPreviewMetadataLayerController::_updateMetadataLayer")
+        oldPopFactory=BRMetadataPopulatorFactory.sharedInstance()
+        BRMetadataPopulatorFactory.setSingleton_(PyeTVMetadataPopulatorFactory.alloc().init())
+        BRMetadataPreviewController._updateMetadataLayer(self)
+        BRMetadataPopulatorFactory.setSingleton_(oldPopFactory)
+
+
+class ETVMenuController(PyFR.MenuController.MenuController):
+
+    def GetRecordingMetadata(self, controller, rec):
+        return PyeTVPreviewMetadataController.alloc().initWithRecording_(rec)
 
     def GetRecordingsDict(self):
         log("in getrecordingsdict")
@@ -330,11 +399,14 @@ class ETVMenuController(PyFR.MenuController.MenuController):
 class RUIPythonAppliance( PyFR.Appliance.Appliance ):
 
     def getController(self):
-        self.log("**************************************************")
-        self.log("Appliance controller starting, Enabling logger")
+        self.log("************ PyeTV Starting **********************************")
+
+        # Optionally enable ObjC logging now
         #a=PyFR.Utilities.ControllerUtilities();
         #a.enableObjCCapture() # call this to to enable flushing cache!
-        #self.log("enabled")
+
+        # Or, turn on logging to /tmp/msgSends while /tmp/FRLOG exists
+        #PyFR.Debugging.EnableObjcLogger()
 
         ret=ETVMenuController.alloc().init()
         return ret
