@@ -4,8 +4,11 @@ IMGNAME=${NAME}-${VERSION}
 
 kill:
 #	python setup.py py2app -A
-	kill `ps -aex | grep "Front Row" | awk '{print $$1}'`
-	kill `ps -aex | grep Screen | awk '{print $$1}'`
+	-kill `ps -aex | grep "Front Row" | awk '{print $$1}'`
+	-kill `ps -aex | grep Screen | awk '{print $$1}'`
+	-killall ScreenSaverEngine
+	-killall ScreenSaverEngine
+
 
 clean::
 	rm -rf build dist
