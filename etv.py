@@ -69,13 +69,12 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
         return imgpath
 
     def GetStartTime(self):
-        self.log("GetStartTime called")
         ret = self.rec.start_time.get()
-        self.log("GetStartTime done")
-        return ret
+#        return ret.strftime("%a %b %d %I:%M %p")
+        return ret.strftime("%b %d %I:%M%p")
 
     def GetEpisodeAndDate(self):
-        return self.GetEpisode() + "" + str(self.GetStartTime())
+        return self.GetStartTime() + ": " + self.GetEpisode() 
 
     def ToStr(self,sec):
         self.log("ToStr called")

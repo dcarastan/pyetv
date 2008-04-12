@@ -53,6 +53,7 @@ class ETVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Contr
         else:
             self.call_startup = False
         self.launchApp( '/Applications/EyeTV.app')
+        self.textController.setTitle_("") # don't show "Launching EyeTV" when we come back
 
     def AppShouldExit(self):
         self.tickCount = self.tickCount+1
@@ -141,7 +142,7 @@ class PyeTVMetadataPopulator(NSObject):
             asset.rec.GetEpisode(),
             asset.rec.GetChannelStr(),
             asset.rec.GetDuration(True),
-            str(asset.rec.GetStartTime())
+            asset.rec.GetStartTime()
             ]
         layer.setMetadata_withLabels_(data,labels)
         return
@@ -219,9 +220,9 @@ class ETVMenuController(PyFR.MenuController.MenuController):
             root.AddItem(submenu)
             for ep in series[s]:
                 epstr=ep.GetEpisodeAndDate()
-                item=PyFR.MenuController.MenuItem(epstr, self.RecordingOptionsDialog, ep, self.GetRecordingMetadata)
+                item=PyFR.MenuController.MenuItem(epstr, self.RecordingOptionsDialog, ep, self.GetRecordingMetadata, True)
                 submenu.AddItem(item)
-            item=PyFR.MenuController.MenuItem("Delete all",self.ConfirmDeleteRecordingDialog, series[s])
+            item=PyFR.MenuController.MenuItem("Delete all",self.ConfirmDeleteRecordingDialog, series[s], None, True)
             submenu.AddItem(item)
         return root
 
@@ -316,7 +317,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
             dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Delete recording(s):", options, self.ConfirmDeleteRecordingDialogHandler)
             dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
         else:
-            title="Are you sure you want to delete '" + rec.GetTitle()+ ": " + rec.GetEpisode() + " " + str(rec.GetStartTime()) + "' ?"
+            title="Are you sure you want to delete '" + rec.GetTitle()+ ": " + rec.GetEpisode() + " " + rec.GetStartTime() + "' ?"
             dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Delete recording(s):", options, self.ConfirmDeleteRecordingDialogHandler)
             dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
             
@@ -352,7 +353,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
                 else:
                     options.append(PyFR.OptionDialog.OptionItem("Mark Commercials", rec))
 
-        title=rec.GetTitle()+ ": " + rec.GetEpisode() + " " + str(rec.GetStartTime())
+        title=rec.GetTitle()+ ": " + rec.GetEpisode() + " " + rec.GetStartTime()
         dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Recording options", options, self.RecordingOptionsDialogHandler)
         dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
         return dlg
