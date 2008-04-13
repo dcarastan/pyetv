@@ -109,6 +109,15 @@ class PyeTVMediaAsset(BRSimpleMediaAsset):
         BRSimpleMediaAsset.initWithMediaURL_(self,"")
         self.rec=rec
         self.firstTime=True
+        self.IsSeries=False
+        return self
+
+    def initWithSeriesEpisode_(self, rec):
+        log("PyeTVMediaAsset inited for rec %s" % rec.GetTitle());
+        BRSimpleMediaAsset.initWithMediaURL_(self,"")
+        self.rec=rec
+        self.firstTime=True
+        self.IsSeries=True
         return self
 
     def coverArt(self):
@@ -130,6 +139,8 @@ class PyeTVMetadataPopulator(NSObject):
 
     def populateLayer_fromAsset_(self, layer, asset):
         log("We want to do magic stuff here for layer %s and asset %s" % (repr(layer), repr(asset)))
+        if asset.IsSeries:
+            return
         layer.setTitle_(asset.rec.GetTitle())
         layer.setSummary_(asset.rec.GetDescription())
         labels=[
@@ -177,6 +188,13 @@ class PyeTVPreviewMetadataController(BRMetadataPreviewController):
         self.setShowsMetadataImmediately_(True) # could comment this out for a bigger look at the screenshot, but the md is more important
         return self
 
+    def initWithSeriesEpisode_(self, rec):
+        BRMetadataPreviewController.init(self)
+        asset=PyeTVMediaAsset.alloc().initWithSeriesEpisode_(rec)
+        self.setAsset_(asset)
+        #self.setShowsMetadataImmediately_(True) 
+        return self
+
     def _updateMetadataLayer(self):
         # create temporary populator factory and replace standard one ---
         # I don't know how to get the standard populator to properly identify the asset,
@@ -195,28 +213,36 @@ class ETVMenuController(PyFR.MenuController.MenuController):
     def GetRecordingMetadata(self, controller, rec):
         return PyeTVPreviewMetadataController.alloc().initWithRecording_(rec)
 
+    def GetSeriesMetadata(self, controller, series):
+        log("requested preview for series %s" % (series))
+        if series not in self.series_dict.keys():
+            return None
+        # FIXME: create this function and get metadata populator to get screenshots for series, too
+        return PyeTVPreviewMetadataController.alloc().initWithSeriesEpisode_(self.series_dict[series][0])
+
+
     def GetRecordingsDict(self):
         log("in getrecordingsdict")
-        series_dict={}
+        self.series_dict={}
         rec=ETV.GetRecordings()
         log("Got %d recordings" % len(rec))
         for r in rec:
             title=r.GetTitle()
-            series_dict[title]=[]
+            self.series_dict[title]=[]
 
         for r in rec:
             title=r.GetTitle()
-            series_dict[title].append(r)
-        return series_dict
+            self.series_dict[title].append(r)
+        return self.series_dict
 
     def MakeRecordingsMenu(self):
-        root=RecordingsMenu("EyeTV Recordings", [])
+        root=RecordingsMenu("EyeTV Recordings", [],  self.GetSeriesMetadata)
         log("recordings menu now has %d items" % len(root.items))
         series=self.GetRecordingsDict()
         k=series.keys()
         k.sort()
         for s in k:
-            submenu=RecordingsMenu(s, [])
+            submenu=RecordingsMenu(s, [], self.GetSeriesMetadata)
             root.AddItem(submenu)
             for ep in series[s]:
                 epstr=ep.GetEpisodeAndDate()
