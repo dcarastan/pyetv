@@ -72,6 +72,9 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
         ret = self.rec.start_time.get()
         return ret.strftime("%b %d %I:%M%p")
 
+    def GetDate(self):
+        return self.rec.start_time.get()
+
     def GetEpisodeAndDate(self):
         return self.GetStartTime() + " " + self.GetEpisode() 
 
