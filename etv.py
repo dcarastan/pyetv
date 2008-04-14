@@ -205,7 +205,8 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         app("EyeTV").controller_window.hide()
         app("EyeTV").programs_window.hide()
         wins=app("EyeTV").player_windows.get()
-        wins.close()
+        for w in wins:
+            w.close()
 
     def DeleteRecording(self,rec):
         app("EyeTV").stop()

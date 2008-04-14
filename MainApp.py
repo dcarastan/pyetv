@@ -58,16 +58,6 @@ class ETVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Contr
     def AppShouldExit(self):
         self.tickCount = self.tickCount+1
 
-#         a=PyFR.Utilities.ControllerUtilities();
-#         if self.tickCount < 100:
-#             a.disableObjCCapture() # call this to to enable flushing cache!
-#             #a.enableObjCCapture()
-
-#         # re-enable logging after ~20 minutes so we can catch the exit of FrontRow
-#         if self.tickCount >= 4780:
-#             a.disableObjCCapture() # call this to to enable flushing cache!
-#             a.enableObjCCapture()
-
         # tune these parameters
         wait_before_calling_startup = 1
         wait_before_exit_ticks=20
@@ -99,7 +89,11 @@ class ETVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Contr
 
     def FRWasShown(self):
         log("**************** FRWasShown *****************");
-        self.stack().popController()
+        try:
+            # sometimes this doesn't work!
+            self.stack().popController()
+        except:
+            pass
 
 ################################################################################
 
@@ -213,6 +207,9 @@ class ETVMenuController(PyFR.MenuController.MenuController):
     def GetRecordingMetadata(self, controller, rec):
         return PyeTVPreviewMetadataController.alloc().initWithRecording_(rec)
 
+    def GetRecordingMetadataFromTuple(self, controller, rec):
+        return PyeTVPreviewMetadataController.alloc().initWithRecording_(rec[0])
+
     def GetSeriesMetadata(self, controller, series):
         log("requested preview for series %s" % (series))
         if series not in self.series_dict.keys():
@@ -244,9 +241,18 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         for s in k:
             submenu=RecordingsMenu(s, [], self.GetSeriesMetadata)
             root.AddItem(submenu)
+
+            # sort by date
+            series_episodes={}
             for ep in series[s]:
+                series_episodes[ep.GetDate()]=ep
+            date_keys=series_episodes.keys();
+            date_keys.sort()
+
+            for epdate in date_keys:
+                ep=series_episodes[epdate]
                 epstr=ep.GetEpisodeAndDate()
-                item=PyFR.MenuController.MenuItem(epstr, self.RecordingOptionsDialog, ep, self.GetRecordingMetadata, True)
+                item=PyFR.MenuController.MenuItem(epstr, self.RecordingOptionsMenu, ep, self.GetRecordingMetadata, True)
                 submenu.AddItem(item)
             item=PyFR.MenuController.MenuItem("Delete all",self.ConfirmDeleteRecordingDialog, series[s], None, True)
             submenu.AddItem(item)
@@ -305,31 +311,33 @@ class ETVMenuController(PyFR.MenuController.MenuController):
             return False
         return True
             
-    def RecordingOptionsDialogHandler(self, controller, idx, item):
-        log("RecordingOptionsDialogHandler")
-        rec=item.data
+    def RecordingOptionsMenuHandler(self, controller, data):
+        log("RecordingOptionsMenuHandler, controller is %s" % str(controller))
+        try:
+            rec=data[0]
+            idx=data[1]
+        except:
+            return
+
+        log("Got idx: %s rec %s" % (repr(idx), repr(rec)))
         if idx==0 or idx==1:
             ETV.SetCurrentRecording(rec,idx==1)
             newCon=ETVWaitController.alloc().initWithStartup_exitCond_(ETV.PlayCurrentRecording,ETV.IsPlaying)
             return controller.stack().pushController_(newCon)
         if idx==2:
-            log("deletion request")
             return self.ConfirmDeleteRecordingDialog(controller, rec)
         if idx==3:
-            log("comskip toggle request")
             if self.AppRunning("ComSkipper"):
-                os.system("killall ComSkipper &")
+                os.system("/usr/bin/killall ComSkipper &")
+                self.CurrentOptionsMenu.ds.menu.items[3].layer.setTitle_("ComSkipper                     [Off]") # deep magic
             else:
                 os.system("/Library/Application\ Support/ETVComskip/ComSkipper.app/Contents/MacOS/ComSkipper &")
+                self.CurrentOptionsMenu.ds.menu.items[3].layer.setTitle_("ComSkipper                      [On]") # deep magic
             time.sleep(0.5)
+
         if idx==4:
-            log("MarkCommercials request")
             log("/Library/Application\ Support/ETVComskip/MarkCommercials.app/Contents/MacOS/MarkCommercials --log %s &" % rec.rec.unique_ID.get())
             os.system("/Library/Application\ Support/ETVComskip/MarkCommercials.app/Contents/MacOS/MarkCommercials --log %s &" % rec.rec.unique_ID.get())
-
-        if idx==3 or idx==4:
-            dlg=self.GetRecordingOptionsDialog(rec)
-            controller.stack().swapController_(dlg)
 
         # if we return true, we'll pop the controller and back up past the option dialog
         return False
@@ -355,38 +363,32 @@ class ETVMenuController(PyFR.MenuController.MenuController):
             return True
         return False
 
-    def GetRecordingOptionsDialog(self, rec):
-        pos=rec.GetPlaybackPosition(True)
-        end=rec.GetDuration(True)
-
-        options=[ PyFR.OptionDialog.OptionItem("Play @ %s / %s" % (pos,end), rec),
-                  PyFR.OptionDialog.OptionItem("Restart", rec),
-                  PyFR.OptionDialog.OptionItem("Delete", rec)
-                  #PyFR.OptionDialog.OptionItem("Comskip On/Off", rec),
-                  #PyFR.OptionDialog.OptionItem("Scan file", rec)
-                  ]
-        if os.path.exists("/Library/Application Support/ETVComskip/ComSkipper.app") and \
-                os.path.exists("/Library/Application Support/ETVComskip/MarkCommercials.app"):
+    def GetRecordingOptionsMenu(self, rec):
+        items= [
+            PyFR.MenuController.MenuItem("Play",   self.RecordingOptionsMenuHandler, (rec, 0), self.GetRecordingMetadataFromTuple),
+            PyFR.MenuController.MenuItem("Restart", self.RecordingOptionsMenuHandler, (rec, 1), self.GetRecordingMetadataFromTuple),
+            PyFR.MenuController.MenuItem("Delete",   self.RecordingOptionsMenuHandler, (rec, 2), self.GetRecordingMetadataFromTuple)
+            ]
+        
+        if self.HasETVComskip:
+            comskip_state="ComSkipper                      [Off]"
             if self.AppRunning("ComSkipper"):
                 comskip_state="ComSkipper                      [On]"
-            else:
-                comskip_state="ComSkipper                      [Off]"
-
-            options.append(PyFR.OptionDialog.OptionItem(comskip_state, rec))
+            items.append(PyFR.MenuController.MenuItem(comskip_state,   self.RecordingOptionsMenuHandler, (rec, 3), self.GetRecordingMetadataFromTuple))
             if rec.GetMarkerCount()==0:
+                mc_state="Mark Commercials"
                 if self.AppRunning("MarkCommercials"):
-                    options.append(PyFR.OptionDialog.OptionItem("Mark Commercials    [Running]", rec))
-                else:
-                    options.append(PyFR.OptionDialog.OptionItem("Mark Commercials", rec))
+                    mc_state="Mark Commercials    [Running]"
+                items.append(PyFR.MenuController.MenuItem(mc_state, self.RecordingOptionsMenuHandler, (rec, 4), self.GetRecordingMetadataFromTuple))
 
-        title=rec.GetTitle()+ ": " + rec.GetEpisode() + " " + rec.GetStartTime()
-        dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Recording options", options, self.RecordingOptionsDialogHandler)
-        dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
+        menu=PyFR.MenuController.Menu(rec.GetTitle(), items)
+        dlg=PyFR.MenuController.MenuController.initWithMenu_(self, menu)
+        self.CurrentOptionsMenu = dlg
         return dlg
 
-    def RecordingOptionsDialog(self, controller, rec):
+    def RecordingOptionsMenu(self, controller, rec):
         log("in recording options dialog")
-        dlg=self.GetRecordingOptionsDialog(rec)
+        dlg=self.GetRecordingOptionsMenu(rec)
         return controller.stack().pushController_(dlg)
 
 
@@ -418,6 +420,8 @@ class ETVMenuController(PyFR.MenuController.MenuController):
                 ])
 
         ac=PyFR.MenuController.MenuController.initWithMenu_(self, self.menu)
+        self.HasETVComskip = os.path.exists("/Library/Application Support/ETVComskip/ComSkipper.app") and \
+            os.path.exists("/Library/Application Support/ETVComskip/MarkCommercials.app")
         log("Done initing menus")
         return ac
         
