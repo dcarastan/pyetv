@@ -25,7 +25,7 @@ import string
 # local logging
 import Foundation
 def log(s):
-    #Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
+    Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
     pass
 #end
 ######################################################################
@@ -140,13 +140,13 @@ class PyeTVMetadataPopulator(NSObject):
         labels=[
             "Episode",
             "Channel",
-            "Duration",
-            "Start time"
+            "Position",
+            "Recorded at"
             ]
         data=[
             asset.rec.GetEpisode(),
             asset.rec.GetChannelStr(),
-            asset.rec.GetDuration(True),
+            asset.rec.GetPlaybackPosition(True) + " of " +asset.rec.GetDuration(True),
             asset.rec.GetStartTime()
             ]
         layer.setMetadata_withLabels_(data,labels)

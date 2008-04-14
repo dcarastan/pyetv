@@ -10,9 +10,11 @@ import PyFR.Utilities
 # local logging
 import Foundation
 def log(s):
-    Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
-#end
+    #Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
+
 ######################################################################
+
+ETV_CURRENT_RECORDING=None
 
 
 class ETVChannel(PyFR.Utilities.ControllerUtilities):
@@ -56,14 +58,28 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
         self.log("GetEpisode done")
         return ret
 
+    # must be a HFS filename (e.g. ":tmp:screenshot.jpg"), not posix (/tmp/screenshot.jpg)
+    def TakeScreenshot(self, fname):
+        try:
+            app("EyeTV").screenshot.set(fname)
+            return True
+        except:
+            return False
+
     def GetPreviewImagePath(self):
         imgpath=""
         try:
-            loc=self.rec.location.get()
-            f=loc.file.path
-            f=f[:-6]+"tiff"
-            if len(f)>0:
-                imgpath=f
+            if self == ETV_CURRENT_RECORDING:
+                # try screenshot first
+                fname=":tmp:screenshot.jpg"
+                app("EyeTV").screenshot.set(fname)
+                return "/tmp/screenshot.jpg"
+            else:
+                loc=self.rec.location.get()
+                f=loc.file.path
+                f=f[:-6]+"tiff"
+                if len(f)>0:
+                    imgpath=f
         except:
             pass
         return imgpath
@@ -198,7 +214,9 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         return self.rec
 
     def SetCurrentRecording(self, rec, fromBeginning):
+        global ETV_CURRENT_RECORDING
         self.rec=rec
+        ETV_CURRENT_RECORDING=self.rec
         self.fromBeginning=fromBeginning
 
     def HideWindows(self):
