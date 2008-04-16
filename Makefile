@@ -1,5 +1,5 @@
 NAME=PyeTV
-VERSION=1.0
+VERSION=1.1
 IMGNAME=${NAME}-${VERSION}
 
 kill:
@@ -25,7 +25,7 @@ test:
 tar:
 	pushd ..; tar -czvf ${IMGNAME}.tar.gz PyeTV; popd
 
-installers:
+installers: real
 	osacompile -o dist/Install\ PyeTV.app Install.applescript
 	osacompile -o dist/UnInstall\ PyeTV.app UnInstall.applescript
 
