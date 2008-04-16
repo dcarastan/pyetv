@@ -31,6 +31,10 @@ def log(s):
 ######################################################################
 
 
+SERIES_LABEL="Recordings by series"
+ALL_RECORDINGS_LABEL="All recordings"
+
+
 class RecordingsMenu(PyFR.MenuController.Menu):
     def GetRightText(self):
         return str(len(self.items) - 1)
@@ -232,8 +236,8 @@ class ETVMenuController(PyFR.MenuController.MenuController):
             self.series_dict[title].append(r)
         return self.series_dict
 
-    def MakeRecordingsMenu(self):
-        root=RecordingsMenu("EyeTV Recordings", [],  self.GetSeriesMetadata)
+    def MakeSeriesMenu(self):
+        root=RecordingsMenu(SERIES_LABEL, [],  self.GetSeriesMetadata)
         log("recordings menu now has %d items" % len(root.items))
         series=self.GetRecordingsDict()
         k=series.keys()
@@ -258,6 +262,25 @@ class ETVMenuController(PyFR.MenuController.MenuController):
             submenu.AddItem(item)
         return root
 
+    def MakeAllRecordingsMenu(self):
+        root=RecordingsMenu(ALL_RECORDINGS_LABEL, [],  self.GetSeriesMetadata)
+        log("recordings menu now has %d items" % len(root.items))
+        
+        rec_dict={}
+        rec=ETV.GetRecordings()
+        log("Got %d recordings" % len(rec))
+        for r in rec:
+            rec_dict[r.GetDate()]=r
+        date_keys=rec_dict.keys();
+        date_keys.sort(reverse=True)
+
+        for epdate in date_keys:
+            ep=rec_dict[epdate]
+            epstr=ep.GetStartTime() + " " + ep.GetTitle()[:22]
+            item=PyFR.MenuController.MenuItem(epstr, self.RecordingOptionsMenu, ep, self.GetRecordingMetadata, True)
+            root.AddItem(item)
+        return root
+
 
     def PlayChannel(self, controller, chan):
         newCon=ETVWaitController.alloc().initWithStartup_exitCond_(chan.Play,ETV.IsPlaying)
@@ -277,23 +300,23 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         episode=rec.GetEpisodeAndDate()
 
         # find title in menus
-        for series_menu in self.recordings_menu.items:
+        for series_menu in self.series_menu.items:
             if series_menu.page_title==title:
                 log("Found series_menu menu, %d items" % len(series_menu.items))
                 for ep_menu_item in series_menu.items:
                     if ep_menu_item.title==episode:
                         if len(series_menu.items)==2:
                             log("removing series menu")
-                            self.recordings_menu.items.remove(series_menu)
+                            self.series_menu.items.remove(series_menu)
                             if doPop:
-                                con=PyFR.MenuController.MenuController.alloc().initWithMenu_(self.recordings_menu)
+                                con=PyFR.MenuController.MenuController.alloc().initWithMenu_(self.series_menu)
                                 self.stack().replaceControllersAboveLabel_withController_("EyeTV",con)
                         else:
                             log("removing episode from series menu")
                             series_menu.items.remove(ep_menu_item)
                             if doPop:
                                 con=PyFR.MenuController.MenuController.alloc().initWithMenu_(series_menu)
-                                self.stack().replaceControllersAboveLabel_withController_("EyeTV Recordings",con)
+                                self.stack().replaceControllersAboveLabel_withController_(SERIES_LABEL,con)
                         ETV.DeleteRecording(rec)
                         return False # don't pop
 
@@ -304,7 +327,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
             if isinstance(rec,list):
                 for r in rec:
                     self.DeleteEntry(r, False)
-                con=PyFR.MenuController.MenuController.alloc().initWithMenu_(self.recordings_menu)
+                con=PyFR.MenuController.MenuController.alloc().initWithMenu_(self.series_menu)
                 self.stack().replaceControllersAboveLabel_withController_("EyeTV",con)
             else:
                 self.DeleteEntry(rec, True)            
@@ -405,11 +428,13 @@ class ETVMenuController(PyFR.MenuController.MenuController):
 
     def init(self):
         log("Initing recordings")
-        self.recordings_menu=self.MakeRecordingsMenu()
+        self.series_menu=self.MakeSeriesMenu()
+        #self.recordings_menu=self.MakeAllRecordingsMenu()
         log("Initing menus")
         self.menu=PyFR.MenuController.Menu("EyeTV",
                   [
-                self.recordings_menu,
+                self.series_menu,
+                #self.recordings_menu,
                 self.MakeChannelsMenu(),
                 PyFR.MenuController.MenuItem("Enter EyeTV",   self.StartETV),
                 PyFR.MenuController.MenuItem("Program guide", self.StartETVGuide)

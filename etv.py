@@ -11,7 +11,7 @@ import PyFR.Utilities
 import Foundation
 def log(s):
     #Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
-
+    pass
 ######################################################################
 
 ETV_CURRENT_RECORDING=None
