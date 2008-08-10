@@ -10,7 +10,7 @@ import PyFR.Utilities
 # local logging
 import Foundation
 def log(s):
-    #Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
+    Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
     pass
 ######################################################################
 
@@ -26,14 +26,25 @@ class ETVChannel(PyFR.Utilities.ControllerUtilities):
 
     def Play(self):
         #app("EyeTV").player_windows.close()
-        app("EyeTV").channel_change(channel_number = self.chan.channel_number.get())
+        log("Trying2 to play channel number %d" % self.chan.channel_number.get())
+        try:
+            app("EyeTV").channel_change(channel_number = self.chan.channel_number.get())
+        except:
+            # recording? channnel is busy & can't be changed
+            pass
+        log("channel changed. playing")
         app("EyeTV").play()
+        log("played. fs")
         app("EyeTV").enter_full_screen()
         # sometimes it doesn't play.  tell it again, just in case
         time.sleep(0.5)
-        app("EyeTV").channel_change(channel_number = self.chan.channel_number.get())
+        log("repeat")
+        try:
+            app("EyeTV").channel_change(channel_number = self.chan.channel_number.get())
+        except:
+            # recording? channnel is busy & can't be changed
+            pass
         app("EyeTV").play()
-
 
 
 class ETVRecording(PyFR.Utilities.ControllerUtilities):
@@ -182,25 +193,33 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         self.log("IsPlaying done")
         return ret
 
-    def IsFullScreen(self):
-        self.log("IsFullScreen called")
-        ret=app("EyeTV").full_screen_menu.get()
-        self.log("IsFullScreen done")
-        return ret
+    def IsPaused(self):
+        return not self.IsPlaying()
 
-    def IsFullScreenOrPlaying(self):
-        return self.IsFullScreen() or self.IsPlaying()
+    def NotShowingMenu(self):
+        self.log("NotShowingMenu called")
+        ret=app("EyeTV").full_screen_menu.get()
+        return not ret
+
+    def ShowingMenu(self):
+        self.log("ShowingMenu called")
+        ret=app("EyeTV").full_screen_menu.get()
+        return ret
 
     def EnterFullScreen(self):
         self.log("EnterFullScreen called")
         app("EyeTV").enter_full_screen()
         self.log("EnterFullScreen done")
+
+    def HideMenu(self):
+        app("EyeTV").full_screen_menu.set(False)
+        app("EyeTV").stop()  # pause/stop any playback
+        
         
     def ShowMenu(self):
         self.log("ShowMenu called")
         app("EyeTV").full_screen_menu.set(True)
         app("EyeTV").enter_full_screen(True)
-        #app("EyeTV").stop()  # pause/stop any playback
         self.log("ShowMenu done")
 
     def ShowGuide(self):
@@ -236,6 +255,7 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         #self.HideWindows()
         time.sleep(0.5)
         app("EyeTV").play(self.rec.rec)
+        app("EyeTV").play() # necessary if recording is paused
         if self.fromBeginning:
             self.JumpTo(0)
         app("EyeTV").enter_full_screen()

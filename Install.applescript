@@ -20,4 +20,18 @@ end try
 --terminate Front Row so that it will pick up changes
 do shell script "killall Front\\ Row 2>/dev/null; /usr/bin/true"
 
-display dialog "PyeTV installed" buttons {"Ok"}
+display dialog "PyeTV is now installed.
+
+In order for the EyeTV program guide to be accessable to PyeTV, we need to enable GUI scripting in the Universal Access preference pane.
+
+If GUI scripting is is not currently enabled, the installer will ask for your user password in order to turn it on." buttons {"Ok"}
+
+try
+tell application "AppleScript Utility"
+     set GUI Scripting enabled to true
+end tell
+on error
+   display dialog "Error enabling GUI scripting, program guide will not be available until turned on in the Universal Access preferences."
+end try
+
+
