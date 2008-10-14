@@ -10,7 +10,7 @@ import PyFR.Utilities
 # local logging
 import Foundation
 def log(s):
-    Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
+#    Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
     pass
 ######################################################################
 
@@ -25,26 +25,15 @@ class ETVChannel(PyFR.Utilities.ControllerUtilities):
         return str(self.chan.channel_number.get()) + " - " + self.chan.name.get()
 
     def Play(self):
-        #app("EyeTV").player_windows.close()
+        app("EyeTV").player_windows.close()
+        app("EyeTV").window.close()
         log("Trying2 to play channel number %d" % self.chan.channel_number.get())
         try:
             app("EyeTV").channel_change(channel_number = self.chan.channel_number.get())
         except:
             # recording? channnel is busy & can't be changed
             pass
-        log("channel changed. playing")
-        app("EyeTV").play()
-        log("played. fs")
         app("EyeTV").enter_full_screen()
-        # sometimes it doesn't play.  tell it again, just in case
-        time.sleep(0.5)
-        log("repeat")
-        try:
-            app("EyeTV").channel_change(channel_number = self.chan.channel_number.get())
-        except:
-            # recording? channnel is busy & can't be changed
-            pass
-        app("EyeTV").play()
 
 
 class ETVRecording(PyFR.Utilities.ControllerUtilities):
@@ -222,6 +211,12 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         app("EyeTV").enter_full_screen(True)
         self.log("ShowMenu done")
 
+    def IsFullScreen(self):
+        self.log("IsFullScreen called")
+        ret=app("EyeTV").full_screen_menu.get()
+        self.log("IsFullScreen done")
+        return ret
+
     def ShowGuide(self):
         self.log("ShowGuide called")
         self.ShowMenu()
@@ -239,6 +234,7 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         self.fromBeginning=fromBeginning
 
     def HideWindows(self):
+        log("ETV: in HideWindows")
         app("EyeTV").controller_window.hide()
         app("EyeTV").programs_window.hide()
         wins=app("EyeTV").player_windows.get()
@@ -275,5 +271,11 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         app("System Events").keystroke("g",using=k.command_down)
         self.log("ShowProgramGuide done")
 
+
+    def UpdateScreenShot(self):
+        try:
+            app("EyeTV").screenshot.set(":tmp:screenshot.jpg")
+        except:
+            pass
 
 ETV=EyeTV()
