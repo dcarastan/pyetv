@@ -11,6 +11,7 @@ from PyFR import *
 
 from PyFR.BackRow import *
 
+import PyFR.AppLauncherController
 import PyFR.Appliance 
 import PyFR.WaitController
 import PyFR.MenuController
@@ -25,7 +26,7 @@ import string
 # local logging
 import Foundation
 def log(s):
-    Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
+#    Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
     pass
 #end
 ######################################################################
@@ -70,6 +71,8 @@ class ETVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Contr
         if self.call_startup and self.tickCount >= wait_before_calling_startup:
             try:
                 self.startup()
+                if self.exitCond is None:
+                    self.textController.setTitle_("Press menu if you see this.") 
                 self.call_startup = False
             except:
                 log("App::startup failed with tickCount=%d" % self.tickCount)
@@ -77,8 +80,9 @@ class ETVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Contr
 
         # give EyeTV a chance to stabilize, and then disable FrontRow's annoying auto-exit feature
         # so that we can get back here no matter how long the recording is!
-        if self.tickCount ==wait_before_exit_ticks: 
+        if self.tickCount == wait_before_exit_ticks: 
             AutoQuitManager = objc.lookUpClass("FRAutoQuitManager")
+            AutoQuitManager.sharedManager()._stopAutoQuitTimer()
             AutoQuitManager.sharedManager().setAutoQuitEnabled_(False)
 
         # there's no startup function, so just wait for stabilization first
@@ -98,6 +102,10 @@ class ETVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Contr
             self.stack().popController()
         except:
             pass
+        ETV.UpdateScreenShot()
+        #ETV.HideWindows()
+
+
 
 ################################################################################
 
@@ -414,17 +422,11 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         dlg=self.GetRecordingOptionsMenu(rec)
         return controller.stack().pushController_(dlg)
 
-
-    def StartETV(self, controller, arg):
-        log("in StartETV")
-        newCon=ETVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowMenu,None)
-        return controller.stack().pushController_(newCon)
-
     def StartETVGuide(self, controller, arg):
         log("in StartETVGuide")
-        newCon=ETVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,ETV.IsFullScreen)
+        #newCon=ETVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,ETV.IsFullScreen)
+        newCon=ETVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,None)
         return controller.stack().pushController_(newCon)
-        
 
     def init(self):
         log("Initing recordings")
@@ -436,8 +438,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
                 self.series_menu,
                 #self.recordings_menu,
                 self.MakeChannelsMenu(),
-                PyFR.MenuController.MenuItem("Enter EyeTV",   self.StartETV),
-                PyFR.MenuController.MenuItem("Program guide", self.StartETVGuide)
+                PyFR.MenuController.MenuItem("Program guide", self.StartETVGuide),
                 #            ,PyFR.MenuController.MenuItem("Comskip off",   ShowGuide_MenuHandler)
                 #            ,PyFR.MenuController.MenuItem("Comskip off",   ShowGuide_MenuHandler)
                 #            ,PyFR.MenuController.MenuItem("Option dialog",   testOptionDialogTest, "Text test")
@@ -450,6 +451,11 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         log("Done initing menus")
         return ac
         
+    def willBePopped(self):
+        # by user requests; let's hide all EyeTV windows before we leave the appliance
+        ETV.HideWindows()
+        return BRMediaMenuController.willBePopped(self)
+
 
 
 class RUIPythonAppliance( PyFR.Appliance.Appliance ):
