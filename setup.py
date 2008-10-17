@@ -19,7 +19,7 @@ plist = dict(NSPrincipalClass='RUIPythonAppliance',
 
 
 setup(
-    plugin = ['MainApp.py'],
-    data_files=['English.lproj', 'PyFR', 'etv.py' ],
+    plugin = ['PyeTV.py'],
+    data_files=['English.lproj', 'PyFR',  'Logger.py',  'PyeTVMetaData.py', 'PyeTVWaitController.py', 'etv.py', ],
     options=dict(py2app=dict(extension='.frappliance', plist=plist))
  )

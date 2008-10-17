@@ -6,16 +6,12 @@ import time
 
 import PyFR.Utilities
 
-######################################################################
-# local logging
-import Foundation
+#for debugging
+#from Logger import log
 def log(s):
-#    Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
     pass
-######################################################################
 
 ETV_CURRENT_RECORDING=None
-
 
 class ETVChannel(PyFR.Utilities.ControllerUtilities):
     def __init__(self,chan):
@@ -37,25 +33,19 @@ class ETVChannel(PyFR.Utilities.ControllerUtilities):
 
 
 class ETVRecording(PyFR.Utilities.ControllerUtilities):
-
-    # comment this out for debugging
-    def log(self,foo):
-        #log(foo)
-        return
-
     def __init__(self,rec):
         self.rec=rec
 
     def GetTitle(self):
-        self.log("GetTitle called")
+        log("GetTitle called")
         ret=self.rec.title.get()
-        self.log("log done")
+        log("log done")
         return ret
 
     def GetEpisode(self):
-        self.log("GetEpisode called")
+        log("GetEpisode called")
         ret = self.rec.episode.get()
-        self.log("GetEpisode done")
+        log("GetEpisode done")
         return ret
 
     # must be a HFS filename (e.g. ":tmp:screenshot.jpg"), not posix (/tmp/screenshot.jpg)
@@ -95,59 +85,55 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
         return self.GetStartTime() + " " + self.GetEpisode() 
 
     def ToStr(self,sec):
-        self.log("ToStr called")
+        log("ToStr called")
         shour = int(sec)/3600 # integer division
         smin = (sec - shour*3600)/60
         ret = "%d:%02d" % (shour, smin)
-        self.log("ToStr done")
+        log("ToStr done")
         return ret
 
     def GetPlaybackPosition(self, asString=False):
-        self.log("GetPlaybackPosition called")
+        log("GetPlaybackPosition called")
         ret=self.rec.playback_position.get()
         if not asString:
             ret = ret
             return ret
         ret = self.ToStr(ret)
-        self.log("GetPlaybackPosition done")
+        log("GetPlaybackPosition done")
         return ret
 
     def GetDuration(self, asString=False):
-        self.log("GetDuration called")
+        log("GetDuration called")
         ret=self.rec.actual_duration.get()
         if not asString:
             ret = ret
             return ret
         ret = self.ToStr(ret)
-        self.log("GetDuration done")
+        log("GetDuration done")
         return ret
 
     def GetDescription(self):
-        self.log("GetDescription called")
+        log("GetDescription called")
         ret = self.rec.description.get()
-        self.log("GetDescription done")
+        log("GetDescription done")
         return ret
 
     def GetChannelStr(self):
-        self.log("GetChannelStr called")
+        log("GetChannelStr called")
         ret = str(self.rec.channel_number.get())  + " " + self.rec.station_name.get()
-        self.log("GetChannelStr done")
+        log("GetChannelStr done")
         return ret
 
     def GetMarkerCount(self):
-        self.log("GetMarkerCount called")
+        log("GetMarkerCount called")
         return len(self.rec.markers.get())
 
 
 
 
 class EyeTV(PyFR.Utilities.ControllerUtilities):
-    # comment this out for debugging
-    def log(self,foo):
-        return
-
     def GetRecordings(self):
-        self.log("GetRecordings called")
+        log("GetRecordings called")
         for i in range(1,10):  
             recs=app("EyeTV").recordings.get()
             if len(recs)>0:
@@ -156,11 +142,25 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         retval=[]
         for r in recs:
             retval.append(ETVRecording(r))
-        self.log("GetRecordings done")
+        log("GetRecordings done")
         return retval
 
+    def GetRecordingsDict(self):
+        log("in getrecordingsdict")
+        series_dict={}
+        rec=ETV.GetRecordings()
+        log("Got %d recordings" % len(rec))
+        for r in rec:
+            title=r.GetTitle()
+            series_dict[title]=[]
+
+        for r in rec:
+            title=r.GetTitle()
+            series_dict[title].append(r)
+        return series_dict
+
     def GetChannels(self):
-        self.log("GetChannels called")
+        log("GetChannels called")
         for i in range(1,10):  
             chan=app("EyeTV").channels.get()
             if len(chan)>0:
@@ -170,35 +170,35 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         for c in chan:
             if c.enabled.get():
                 retval.append(ETVChannel(c))
-        self.log("GetChannels done")
+        log("GetChannels done")
         return retval
 
     def IsPlaying(self):
-        self.log("IsPlaying called")
+        log("IsPlaying called")
         try:
             ret=app("EyeTV").playing.get()
         except:
             return false
-        self.log("IsPlaying done")
+        log("IsPlaying done")
         return ret
 
     def IsPaused(self):
         return not self.IsPlaying()
 
     def NotShowingMenu(self):
-        self.log("NotShowingMenu called")
+        log("NotShowingMenu called")
         ret=app("EyeTV").full_screen_menu.get()
         return not ret
 
     def ShowingMenu(self):
-        self.log("ShowingMenu called")
+        log("ShowingMenu called")
         ret=app("EyeTV").full_screen_menu.get()
         return ret
 
     def EnterFullScreen(self):
-        self.log("EnterFullScreen called")
+        log("EnterFullScreen called")
         app("EyeTV").enter_full_screen()
-        self.log("EnterFullScreen done")
+        log("EnterFullScreen done")
 
     def HideMenu(self):
         app("EyeTV").full_screen_menu.set(False)
@@ -206,23 +206,23 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         
         
     def ShowMenu(self):
-        self.log("ShowMenu called")
+        log("ShowMenu called")
         app("EyeTV").full_screen_menu.set(True)
         app("EyeTV").enter_full_screen(True)
-        self.log("ShowMenu done")
+        log("ShowMenu done")
 
     def IsFullScreen(self):
-        self.log("IsFullScreen called")
+        log("IsFullScreen called")
         ret=app("EyeTV").full_screen_menu.get()
-        self.log("IsFullScreen done")
+        log("IsFullScreen done")
         return ret
 
     def ShowGuide(self):
-        self.log("ShowGuide called")
+        log("ShowGuide called")
         self.ShowMenu()
         time.sleep(2) # give it time to happen
         app("System Events").keystroke("g",using=k.command_down)
-        self.log("ShowGuide done")
+        log("ShowGuide done")
 
     def GetCurrentRecording(self):
         return self.rec
@@ -247,7 +247,7 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         app("EyeTV").delete(rec.rec)
 
     def PlayCurrentRecording(self):
-        self.log("PlayRecording called to play recording %s%s" % (self.rec.GetTitle(), self.rec.GetEpisodeAndDate()))
+        log("PlayRecording called to play recording %s%s" % (self.rec.GetTitle(), self.rec.GetEpisodeAndDate()))
         #self.HideWindows()
         time.sleep(0.5)
         app("EyeTV").play(self.rec.rec)
@@ -259,17 +259,17 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         # sometimes it doesn't play.  tell it again, just in case
         time.sleep(0.5)
         app("EyeTV").play(self.rec.rec)
-        self.log("PlayRecording done")
+        log("PlayRecording done")
 
     def JumpTo(self,position):
-        self.log("JumpTo called")
+        log("JumpTo called")
         app("EyeTV").jump(to=position)
-        self.log("JumpTo done")
+        log("JumpTo done")
 
     def ShowProgramGuide(self):
-        self.log("ShowProgramGuide called")
+        log("ShowProgramGuide called")
         app("System Events").keystroke("g",using=k.command_down)
-        self.log("ShowProgramGuide done")
+        log("ShowProgramGuide done")
 
 
     def UpdateScreenShot(self):

@@ -1,218 +1,34 @@
-#
-#  main.py
-#  FrontPython
-#
-#  Copyright 2008 Jon A Christopher. All rights reserved.
-#
+# PyeTV
+# 
+# Copyright 2008 Jon A Christopher. All rights reserved.
 
-import os, time
+import os, time, string
 import objc
-from PyFR import *
 
+# PyFR imports
 from PyFR.BackRow import *
-
 import PyFR.AppLauncherController
 import PyFR.Appliance 
-import PyFR.WaitController
 import PyFR.MenuController
 import PyFR.Utilities
 import PyFR.Debugging
 import PyFR.OptionDialog
 
+# PyeTV imports
+from PyeTVMetaData import *
+from PyeTVWaitController import *
 from etv import ETV
-import string
-
-######################################################################
-# local logging
-import Foundation
-def log(s):
-#    Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
-    pass
-#end
-######################################################################
-
+from Logger import log
 
 SERIES_LABEL="Recordings by series"
 ALL_RECORDINGS_LABEL="All recordings"
-
 
 class RecordingsMenu(PyFR.MenuController.Menu):
     def GetRightText(self):
         return str(len(self.items) - 1)
 
-################################################################################
-
-class ETVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.ControllerUtilities):
-    def initWithStartup_exitCond_(self, startup=None, exitCond=None):
-        log("initWithStartup_exitCond_")
-        self.tickCount=0
-        self.startup=startup
-        self.exitCond=exitCond
-        return PyFR.WaitController.WaitController.initWithText_(self, "Launching EyeTV")
-
-    def PyFR_start(self):
-        log("PyFR_start called_")
-        self.tickCount = 0
-        if self.startup is not None:
-            self.call_startup = True
-        else:
-            self.call_startup = False
-        self.launchApp( '/Applications/EyeTV.app')
-        self.textController.setTitle_("") # don't show "Launching EyeTV" when we come back
-
-    def AppShouldExit(self):
-        self.tickCount = self.tickCount+1
-
-        # tune these parameters
-        wait_before_calling_startup = 1
-        wait_before_exit_ticks=20
-
-        # possibly call startup code
-        if self.call_startup and self.tickCount >= wait_before_calling_startup:
-            try:
-                self.startup()
-                if self.exitCond is None:
-                    self.textController.setTitle_("Press menu if you see this.") 
-                self.call_startup = False
-            except:
-                log("App::startup failed with tickCount=%d" % self.tickCount)
-                pass
-
-        # give EyeTV a chance to stabilize, and then disable FrontRow's annoying auto-exit feature
-        # so that we can get back here no matter how long the recording is!
-        if self.tickCount == wait_before_exit_ticks: 
-            AutoQuitManager = objc.lookUpClass("FRAutoQuitManager")
-            AutoQuitManager.sharedManager()._stopAutoQuitTimer()
-            AutoQuitManager.sharedManager().setAutoQuitEnabled_(False)
-
-        # there's no startup function, so just wait for stabilization first
-        if self.exitCond is not None and self.tickCount > wait_before_exit_ticks: 
-            log("calling exitCond(), tickCount=%d" % self.tickCount)
-            return not self.exitCond()
-        return False
-
-
-    def AboutToHideFR(self):
-        pass
-
-    def FRWasShown(self):
-        log("**************** FRWasShown *****************");
-        try:
-            # sometimes this doesn't work!
-            self.stack().popController()
-        except:
-            pass
-        ETV.UpdateScreenShot()
-        #ETV.HideWindows()
-
-
 
 ################################################################################
-
-class PyeTVMediaAsset(BRSimpleMediaAsset):
-    def initWithRecording_(self, rec):
-        log("PyeTVMediaAsset inited for rec %s" % rec.GetTitle());
-        BRSimpleMediaAsset.initWithMediaURL_(self,"")
-        self.rec=rec
-        self.firstTime=True
-        self.IsSeries=False
-        return self
-
-    def initWithSeriesEpisode_(self, rec):
-        log("PyeTVMediaAsset inited for rec %s" % rec.GetTitle());
-        BRSimpleMediaAsset.initWithMediaURL_(self,"")
-        self.rec=rec
-        self.firstTime=True
-        self.IsSeries=True
-        return self
-
-    def coverArt(self):
-        log("PyeTVMediaAsset::coverArt")
-        return BRImage.imageWithPath_(self.rec.GetPreviewImagePath())
-
-    # the first time this is called, it's apparently being asked if it conforms to a BRMediaAsset protocol.  The next time, a collection.
-    def conformsToProtocol_(self, protocol):
-         log("PyeTVMediaAsset::conformsToProtocol: %s" % repr(protocol))
-         if self.firstTime:
-             self.firstTime=False
-             return True
-         return False
-
-class PyeTVMetadataPopulator(NSObject):
-    def init(self):
-        NSObject.init(self);
-        return self
-
-    def populateLayer_fromAsset_(self, layer, asset):
-        log("We want to do magic stuff here for layer %s and asset %s" % (repr(layer), repr(asset)))
-        if asset.IsSeries:
-            return
-        layer.setTitle_(asset.rec.GetTitle())
-        layer.setSummary_(asset.rec.GetDescription())
-        labels=[
-            "Episode",
-            "Channel",
-            "Position",
-            "Recorded at"
-            ]
-        data=[
-            asset.rec.GetEpisode(),
-            asset.rec.GetChannelStr(),
-            asset.rec.GetPlaybackPosition(True) + " of " +asset.rec.GetDuration(True),
-            asset.rec.GetStartTime()
-            ]
-        layer.setMetadata_withLabels_(data,labels)
-        return
-
-    def axMetadataFromAsset_(self, asset):
-        log("called axMetadataFromAsset %s" % repr(asset))
-        return None
-
-# custom metadata populator factory which will return a populator which understands EyeTV recordings
-class PyeTVMetadataPopulatorFactory(BRSingleton):
-    __Instance = None
-
-    def init(self):
-        __Instance=self
-        self.pop=PyeTVMetadataPopulator.alloc().init()
-        return BRSingleton.init(self)
-
-    # Note: this isn't really a good singleton implementation, but it's good enough for our purposes here
-    @classmethod
-    def singleton(self):
-        return self.__Instance
-
-    def populatorForAsset_(self, asset):
-        return self.pop
-
-
-class PyeTVPreviewMetadataController(BRMetadataPreviewController):
-    def initWithRecording_(self, rec):
-        BRMetadataPreviewController.init(self)
-        asset=PyeTVMediaAsset.alloc().initWithRecording_(rec)
-        self.setAsset_(asset)
-        self.setShowsMetadataImmediately_(True) # could comment this out for a bigger look at the screenshot, but the md is more important
-        return self
-
-    def initWithSeriesEpisode_(self, rec):
-        BRMetadataPreviewController.init(self)
-        asset=PyeTVMediaAsset.alloc().initWithSeriesEpisode_(rec)
-        self.setAsset_(asset)
-        #self.setShowsMetadataImmediately_(True) 
-        return self
-
-    def _updateMetadataLayer(self):
-        # create temporary populator factory and replace standard one ---
-        # I don't know how to get the standard populator to properly identify the asset,
-        # and even if I did, one of the pre-defined assets probably wouldn't populate with the fields I want!
-
-        # and yes, this is a horrible abuse of setSingleton_.
-        log("PyeTVPreviewMetadataLayerController::_updateMetadataLayer")
-        oldPopFactory=BRMetadataPopulatorFactory.sharedInstance()
-        BRMetadataPopulatorFactory.setSingleton_(PyeTVMetadataPopulatorFactory.alloc().init())
-        BRMetadataPreviewController._updateMetadataLayer(self)
-        BRMetadataPopulatorFactory.setSingleton_(oldPopFactory)
-
 
 class ETVMenuController(PyFR.MenuController.MenuController):
 
@@ -229,25 +45,10 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         # FIXME: create this function and get metadata populator to get screenshots for series, too
         return PyeTVPreviewMetadataController.alloc().initWithSeriesEpisode_(self.series_dict[series][0])
 
-
-    def GetRecordingsDict(self):
-        log("in getrecordingsdict")
-        self.series_dict={}
-        rec=ETV.GetRecordings()
-        log("Got %d recordings" % len(rec))
-        for r in rec:
-            title=r.GetTitle()
-            self.series_dict[title]=[]
-
-        for r in rec:
-            title=r.GetTitle()
-            self.series_dict[title].append(r)
-        return self.series_dict
-
     def MakeSeriesMenu(self):
         root=RecordingsMenu(SERIES_LABEL, [],  self.GetSeriesMetadata)
         log("recordings menu now has %d items" % len(root.items))
-        series=self.GetRecordingsDict()
+        self.series_dict=series=ETV.GetRecordingsDict()
         k=series.keys()
         k.sort()
         for s in k:
@@ -291,7 +92,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
 
 
     def PlayChannel(self, controller, chan):
-        newCon=ETVWaitController.alloc().initWithStartup_exitCond_(chan.Play,ETV.IsPlaying)
+        newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(chan.Play,ETV.IsPlaying)
         return controller.stack().pushController_(newCon)
 
     def MakeChannelsMenu(self):
@@ -353,7 +154,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         log("Got idx: %s rec %s" % (repr(idx), repr(rec)))
         if idx==0 or idx==1:
             ETV.SetCurrentRecording(rec,idx==1)
-            newCon=ETVWaitController.alloc().initWithStartup_exitCond_(ETV.PlayCurrentRecording,ETV.IsPlaying)
+            newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(ETV.PlayCurrentRecording,ETV.IsPlaying)
             return controller.stack().pushController_(newCon)
         if idx==2:
             return self.ConfirmDeleteRecordingDialog(controller, rec)
@@ -424,8 +225,8 @@ class ETVMenuController(PyFR.MenuController.MenuController):
 
     def StartETVGuide(self, controller, arg):
         log("in StartETVGuide")
-        #newCon=ETVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,ETV.IsFullScreen)
-        newCon=ETVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,None)
+        #newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,ETV.IsFullScreen)
+        newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,None)
         return controller.stack().pushController_(newCon)
 
     def init(self):
