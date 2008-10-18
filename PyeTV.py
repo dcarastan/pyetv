@@ -18,7 +18,11 @@ import PyFR.OptionDialog
 from PyeTVMetaData import *
 from PyeTVWaitController import *
 from etv import ETV
-from Logger import log
+
+import Logger
+def log(s):
+    #Logger.log(s)
+    pass
 
 SERIES_LABEL="Recordings by series"
 ALL_RECORDINGS_LABEL="All recordings"
@@ -47,7 +51,6 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         log("requested preview for series %s" % (series))
         if series not in self.series_dict.keys():
             return None
-        # FIXME: create this function and get metadata populator to get screenshots for series, too
         return PyeTVPreviewMetadataController.alloc().initWithSeriesEpisode_(self.series_dict[series][0])
 
     def MakeSeriesMenu(self):
@@ -85,31 +88,6 @@ class ETVMenuController(PyFR.MenuController.MenuController):
             root.AddItem(item)
         return root
 
-    def DeleteEntry(self, rec, doPop):
-        title=rec.GetTitle()
-        episode=rec.GetEpisodeAndDate()
-
-        # find title in menus
-        for series_menu in self.series_menu.items:
-            if series_menu.page_title==title:
-                log("Found series_menu menu, %d items" % len(series_menu.items))
-                for ep_menu_item in series_menu.items:
-                    if ep_menu_item.title==episode:
-                        if len(series_menu.items)==2:
-                            log("removing series menu")
-                            self.series_menu.items.remove(series_menu)
-                            if doPop:
-                                con=PyFR.MenuController.MenuController.alloc().initWithMenu_(self.series_menu)
-                                self.stack().replaceControllersAboveLabel_withController_("EyeTV",con)
-                        else:
-                            log("removing episode from series menu")
-                            series_menu.items.remove(ep_menu_item)
-                            if doPop:
-                                con=PyFR.MenuController.MenuController.alloc().initWithMenu_(series_menu)
-                                self.stack().replaceControllersAboveLabel_withController_(SERIES_LABEL,con)
-                        ETV.DeleteRecording(rec)
-                        return False # don't pop
-
     def ConfirmDeleteRecordingDialog(self, controller, rec):
         log("in confirm delete recordings dialog")
         options=[ PyFR.OptionDialog.OptionItem("Yes",rec), 
@@ -128,19 +106,35 @@ class ETVMenuController(PyFR.MenuController.MenuController):
     def ConfirmDeleteRecordingDialogHandler(self, controller, idx, item):
         log("ConfirmDeleteRecordingDialogHandler")
         rec=item.data
-        if idx==0:
-            if isinstance(rec,list):
-                for r in rec:
-                    self.DeleteEntry(r, False)
-                con=PyFR.MenuController.MenuController.alloc().initWithMenu_(self.series_menu)
-                self.stack().replaceControllersAboveLabel_withController_("EyeTV",con)
-            else:
-                self.DeleteEntry(rec, True)            
-            return False
-        return True
+        if idx!=0:
+            return True
+
+        if isinstance(rec,list):
+            currentSeries=rec[0].GetTitle()
+            for r in rec:
+                ETV.DeleteRecording(r)
+        else:
+            currentSeries=rec.GetTitle()
+            ETV.DeleteRecording(rec)
+                
+        # now, re-build menu tree
+        self.updateMainMenu()
+
+        # if the series still exists, back up that far
+        for item in self.series_menu.items:
+            if item.page_title==currentSeries:
+                con=PyFR.MenuController.MenuController.alloc().initWithMenu_(item)
+                controller.stack().replaceControllersAboveLabel_withController_(SERIES_LABEL,con)
+                return False
+
+        # series is gone, back up to EyeTV menu
+        con=PyFR.MenuController.MenuController.alloc().initWithMenu_(self.series_menu)
+        controller.stack().replaceControllersAboveLabel_withController_("EyeTV",con)
+        return False
 
     def RecordingOptionsMenuHandler(self, controller, data):
         log("RecordingOptionsMenuHandler, controller is %s" % str(controller))
+        log("Stack is %s, controller stack is %s" % (self.stack(),controller.stack()))
         try:
             rec=data[0]
             idx=data[1]
@@ -189,7 +183,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
                 items.append(PyFR.MenuController.MenuItem(mc_state, self.RecordingOptionsMenuHandler, (rec, 4), self.GetRecordingMetadataFromTuple))
 
         menu=PyFR.MenuController.Menu(rec.GetTitle(), items)
-        dlg=PyFR.MenuController.MenuController.initWithMenu_(self, menu)
+        dlg=PyFR.MenuController.MenuController.alloc().initWithMenu_(menu)
         self.CurrentOptionsMenu = dlg
         return dlg
 
@@ -197,8 +191,6 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         log("in recording options dialog")
         dlg=self.GetRecordingOptionsMenu(rec)
         return controller.stack().pushController_(dlg)
-
-
 
     # WaitController startup callback
     def PlayChannel(self, controller, chan):
@@ -212,15 +204,18 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,None)
         return controller.stack().pushController_(newCon)
 
+    # re-create series menu tree and sub it into the main menu
+    def updateMainMenu(self):
+        self.series_menu=self.MakeSeriesMenu()
+        self.MainMenu.items[0]=self.series_menu
+
     def init(self):
         log("Initing recordings")
         self.series_menu=self.MakeSeriesMenu()
-        #self.recordings_menu=self.MakeAllRecordingsMenu()
         log("Initing menus")
-        self.menu=PyFR.MenuController.Menu("EyeTV",
+        self.MainMenu=PyFR.MenuController.Menu("EyeTV",
                   [
                 self.series_menu,
-                #self.recordings_menu,
                 self.MakeChannelsMenu(),
                 PyFR.MenuController.MenuItem("Program guide", self.StartETVGuide),
                 #            ,PyFR.MenuController.MenuItem("Comskip off",   ShowGuide_MenuHandler)
@@ -229,7 +224,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
                 #            ,PyFR.MenuController.MenuItem("Text test",   TestText_MenuHandler, "Text test")
                 ])
 
-        ac=PyFR.MenuController.MenuController.initWithMenu_(self, self.menu)
+        ac=PyFR.MenuController.MenuController.alloc().initWithMenu_(self.MainMenu)
         self.HasETVComskip = os.path.exists("/Library/Application Support/ETVComskip/ComSkipper.app") and \
             os.path.exists("/Library/Application Support/ETVComskip/MarkCommercials.app")
         log("Done initing menus")
