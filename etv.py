@@ -38,13 +38,18 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
 
     def GetTitle(self):
         log("GetTitle called")
-        ret=self.rec.title.get()
-        log("log done")
-        return ret
+        try:
+            ret=self.rec.title.get()
+            return ret
+        except:
+            return ""
 
     def GetEpisode(self):
         log("GetEpisode called")
-        ret = self.rec.episode.get()
+        try:
+            ret = self.rec.episode.get()
+        except:
+            return ""
         log("GetEpisode done")
         return ret
 
@@ -75,14 +80,23 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
         return imgpath
 
     def GetStartTime(self):
-        ret = self.rec.start_time.get()
-        return ret.strftime("%b %d %I:%M%p")
+        try:
+            ret = self.rec.start_time.get()
+            return ret.strftime("%b %d %I:%M%p")
+        except:
+            return ""
 
     def GetDate(self):
-        return self.rec.start_time.get()
+        try:
+            return self.rec.start_time.get()
+        except:
+            return ""
 
     def GetEpisodeAndDate(self):
-        return self.GetStartTime() + " " + self.GetEpisode() 
+        try:
+            return self.GetStartTime() + " " + self.GetEpisode() 
+        except:
+            return ""
 
     def ToStr(self,sec):
         log("ToStr called")
@@ -94,7 +108,10 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
 
     def GetPlaybackPosition(self, asString=False):
         log("GetPlaybackPosition called")
-        ret=self.rec.playback_position.get()
+        try:
+            ret=self.rec.playback_position.get()
+        except:
+            return ""
         if not asString:
             ret = ret
             return ret
@@ -104,7 +121,10 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
 
     def GetDuration(self, asString=False):
         log("GetDuration called")
-        ret=self.rec.actual_duration.get()
+        try:
+            ret=self.rec.actual_duration.get()
+        except:
+            return ""
         if not asString:
             ret = ret
             return ret
@@ -114,21 +134,28 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
 
     def GetDescription(self):
         log("GetDescription called")
-        ret = self.rec.description.get()
+        try:
+            ret = self.rec.description.get()
+        except:
+            return ""
         log("GetDescription done")
         return ret
 
     def GetChannelStr(self):
         log("GetChannelStr called")
-        ret = str(self.rec.channel_number.get())  + " " + self.rec.station_name.get()
+        try:
+            ret = str(self.rec.channel_number.get())  + " " + self.rec.station_name.get()
+        except:
+            return ""
         log("GetChannelStr done")
         return ret
 
     def GetMarkerCount(self):
         log("GetMarkerCount called")
-        return len(self.rec.markers.get())
-
-
+        try:
+            return len(self.rec.markers.get())
+        except:
+            return 0
 
 
 class EyeTV(PyFR.Utilities.ControllerUtilities):

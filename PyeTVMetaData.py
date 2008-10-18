@@ -13,7 +13,6 @@ class PyeTVMediaAsset(BRSimpleMediaAsset):
     """
     Defines a FrontRow media asset from a EyeTV recording  
     """
-
     def initWithRecording_(self, rec):
         log("PyeTVMediaAsset inited for rec %s" % rec.GetTitle());
         BRSimpleMediaAsset.initWithMediaURL_(self,"")
