@@ -5,9 +5,12 @@
 import objc
 import string
 from PyFR.BackRow import *
-from Logger import log
 from etv import ETV
 
+import Logger
+def log(s):
+    #Logger.log(s)
+    pass
 
 class PyeTVMediaAsset(BRSimpleMediaAsset):
     """
