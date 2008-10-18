@@ -6,9 +6,10 @@ import time
 
 import PyFR.Utilities
 
-#for debugging
-#from Logger import log
+
+import Logger
 def log(s):
+    #Logger.log(s)
     pass
 
 ETV_CURRENT_RECORDING=None
