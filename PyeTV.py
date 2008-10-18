@@ -31,6 +31,11 @@ class RecordingsMenu(PyFR.MenuController.Menu):
 ################################################################################
 
 class ETVMenuController(PyFR.MenuController.MenuController):
+    def AppRunning(self, appname):
+        process = os.popen("ps x | grep %s | grep -v grep" % appname).read()
+        if process:
+            return True
+        return False
 
     def GetRecordingMetadata(self, controller, rec):
         return PyeTVPreviewMetadataController.alloc().initWithRecording_(rec)
@@ -71,30 +76,6 @@ class ETVMenuController(PyFR.MenuController.MenuController):
             submenu.AddItem(item)
         return root
 
-    def MakeAllRecordingsMenu(self):
-        root=RecordingsMenu(ALL_RECORDINGS_LABEL, [],  self.GetSeriesMetadata)
-        log("recordings menu now has %d items" % len(root.items))
-        
-        rec_dict={}
-        rec=ETV.GetRecordings()
-        log("Got %d recordings" % len(rec))
-        for r in rec:
-            rec_dict[r.GetDate()]=r
-        date_keys=rec_dict.keys();
-        date_keys.sort(reverse=True)
-
-        for epdate in date_keys:
-            ep=rec_dict[epdate]
-            epstr=ep.GetStartTime() + " " + ep.GetTitle()[:22]
-            item=PyFR.MenuController.MenuItem(epstr, self.RecordingOptionsMenu, ep, self.GetRecordingMetadata, True)
-            root.AddItem(item)
-        return root
-
-
-    def PlayChannel(self, controller, chan):
-        newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(chan.Play,ETV.IsPlaying)
-        return controller.stack().pushController_(newCon)
-
     def MakeChannelsMenu(self):
         chan=ETV.GetChannels()
         root=PyFR.MenuController.Menu("Channels",[])
@@ -129,6 +110,21 @@ class ETVMenuController(PyFR.MenuController.MenuController):
                         ETV.DeleteRecording(rec)
                         return False # don't pop
 
+    def ConfirmDeleteRecordingDialog(self, controller, rec):
+        log("in confirm delete recordings dialog")
+        options=[ PyFR.OptionDialog.OptionItem("Yes",rec), 
+                  PyFR.OptionDialog.OptionItem("No",rec) ]
+        if isinstance(rec,list):
+            title="Are you sure you want to delete %d recordings from %s?" % (len(rec),rec[0].GetTitle())
+            dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Delete recording(s):", options, self.ConfirmDeleteRecordingDialogHandler)
+            dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
+        else:
+            title="Are you sure you want to delete '" + rec.GetTitle()+ ": " + rec.GetEpisode() + " " + rec.GetStartTime() + "' ?"
+            dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Delete recording(s):", options, self.ConfirmDeleteRecordingDialogHandler)
+            dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
+            
+        return controller.stack().pushController_(dlg)
+
     def ConfirmDeleteRecordingDialogHandler(self, controller, idx, item):
         log("ConfirmDeleteRecordingDialogHandler")
         rec=item.data
@@ -142,7 +138,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
                 self.DeleteEntry(rec, True)            
             return False
         return True
-            
+
     def RecordingOptionsMenuHandler(self, controller, data):
         log("RecordingOptionsMenuHandler, controller is %s" % str(controller))
         try:
@@ -174,27 +170,6 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         # if we return true, we'll pop the controller and back up past the option dialog
         return False
 
-    def ConfirmDeleteRecordingDialog(self, controller, rec):
-        log("in confirm delete recordings dialog")
-        options=[ PyFR.OptionDialog.OptionItem("Yes",rec), 
-                  PyFR.OptionDialog.OptionItem("No",rec) ]
-        if isinstance(rec,list):
-            title="Are you sure you want to delete %d recordings from %s?" % (len(rec),rec[0].GetTitle())
-            dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Delete recording(s):", options, self.ConfirmDeleteRecordingDialogHandler)
-            dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
-        else:
-            title="Are you sure you want to delete '" + rec.GetTitle()+ ": " + rec.GetEpisode() + " " + rec.GetStartTime() + "' ?"
-            dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Delete recording(s):", options, self.ConfirmDeleteRecordingDialogHandler)
-            dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
-            
-        return controller.stack().pushController_(dlg)
-
-    def AppRunning(self, appname):
-        process = os.popen("ps x | grep %s | grep -v grep" % appname).read()
-        if process:
-            return True
-        return False
-
     def GetRecordingOptionsMenu(self, rec):
         items= [
             PyFR.MenuController.MenuItem("Play",   self.RecordingOptionsMenuHandler, (rec, 0), self.GetRecordingMetadataFromTuple),
@@ -223,6 +198,14 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         dlg=self.GetRecordingOptionsMenu(rec)
         return controller.stack().pushController_(dlg)
 
+
+
+    # WaitController startup callback
+    def PlayChannel(self, controller, chan):
+        newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(chan.Play,ETV.IsPlaying)
+        return controller.stack().pushController_(newCon)
+
+    # WaitController startup callback
     def StartETVGuide(self, controller, arg):
         log("in StartETVGuide")
         #newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,ETV.IsFullScreen)
