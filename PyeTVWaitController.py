@@ -5,7 +5,10 @@ import PyFR.WaitController
 import PyFR.Utilities
 
 from etv import ETV
-from Logger import log
+import Logger
+def log(s):
+    #Logger.log(s)
+    pass
 
 class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.ControllerUtilities):
     """
