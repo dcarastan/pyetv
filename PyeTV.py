@@ -36,7 +36,7 @@ class RecordingsMenu(PyFR.MenuController.Menu):
 
 class ETVMenuController(PyFR.MenuController.MenuController):
     def AppRunning(self, appname):
-        process = os.popen("ps x | grep %s | grep -v grep" % appname).read()
+        process = os.popen("ps xc | grep %s" % appname).read()
         if process:
             return True
         return False
@@ -52,6 +52,10 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         if series not in self.series_dict.keys():
             return None
         return PyeTVPreviewMetadataController.alloc().initWithSeriesEpisode_(self.series_dict[series][0])
+
+    def GetChannelMetadata(self, controller, channel):
+        log("requested preview for channel %s" % str(channel))
+        return PyeTVPreviewMetadataController.alloc().initWithChannel_(channel)
 
     def MakeSeriesMenu(self):
         root=RecordingsMenu(SERIES_LABEL, [],  self.GetSeriesMetadata)
@@ -84,7 +88,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         root=PyFR.MenuController.Menu("Channels",[])
         for c in chan:
             chstr=c.GetName()
-            item=PyFR.MenuController.MenuItem(chstr, self.PlayChannel, c)
+            item=PyFR.MenuController.MenuItem(chstr, self.PlayChannel, c, self.GetChannelMetadata, False)
             root.AddItem(item)
         return root
 
@@ -210,6 +214,9 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         self.MainMenu.items[0]=self.series_menu
 
     def init(self):
+        self.HasETVComskip = os.path.exists("/Library/Application Support/ETVComskip/ComSkipper.app") and \
+                             os.path.exists("/Library/Application Support/ETVComskip/MarkCommercials.app")
+
         log("Initing recordings")
         self.series_menu=self.MakeSeriesMenu()
         log("Initing menus")
@@ -224,14 +231,14 @@ class ETVMenuController(PyFR.MenuController.MenuController):
                 #            ,PyFR.MenuController.MenuItem("Text test",   TestText_MenuHandler, "Text test")
                 ])
 
-        ac=PyFR.MenuController.MenuController.alloc().initWithMenu_(self.MainMenu)
-        self.HasETVComskip = os.path.exists("/Library/Application Support/ETVComskip/ComSkipper.app") and \
-            os.path.exists("/Library/Application Support/ETVComskip/MarkCommercials.app")
+        # chain to parent's ctor
+        ac=PyFR.MenuController.MenuController.initWithMenu_(self,self.MainMenu)
         log("Done initing menus")
         return ac
         
     def willBePopped(self):
         # by user requests; let's hide all EyeTV windows before we leave the appliance
+        log("ETVMenuController willBePopped")
         ETV.HideWindows()
         return BRMediaMenuController.willBePopped(self)
 
