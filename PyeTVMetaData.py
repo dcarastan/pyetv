@@ -19,21 +19,37 @@ class PyeTVMediaAsset(BRSimpleMediaAsset):
     def initWithRecording_(self, rec):
         log("PyeTVMediaAsset inited for rec %s" % rec.GetTitle());
         BRSimpleMediaAsset.initWithMediaURL_(self,"")
+        self.channel=None
         self.rec=rec
         self.firstTime=True
         self.IsSeries=False
+        self.IsChannel=False
         return self
 
     def initWithSeriesEpisode_(self, rec):
         log("PyeTVMediaAsset inited for rec %s" % rec.GetTitle());
         BRSimpleMediaAsset.initWithMediaURL_(self,"")
+        self.channel=None
         self.rec=rec
         self.firstTime=True
         self.IsSeries=True
+        self.IsChannel=False
+        return self
+
+    def initWithChannel_(self, chan):
+        log("PyeTVMediaAsset inited for channel %s" % repr(chan));
+        BRSimpleMediaAsset.initWithMediaURL_(self,"")
+        self.rec=None
+        self.channel=chan
+        self.firstTime=True
+        self.IsSeries=False
+        self.IsChannel=True
         return self
 
     def coverArt(self):
         log("PyeTVMediaAsset::coverArt")
+        if self.IsChannel:
+            return BRImage.imageWithPath_(self.channel.GetPreviewImagePath())
         return BRImage.imageWithPath_(self.rec.GetPreviewImagePath())
 
     # the first time this is called, it's apparently being asked if it conforms to a BRMediaAsset protocol.  The next time, a collection.
@@ -52,9 +68,67 @@ class PyeTVMetadataPopulator(NSObject):
         NSObject.init(self);
         return self
 
+    # helper exitCondition for opening eyetv window
+    def ReturnFalse(self):
+        return False
+
+    def populateChannelData(self, layer, asset):
+        log("in populateChannelData")
+
+        currentTitle=""
+        nextDesc=""
+        nextTime=""
+        nextTitle=""
+        currentDesc=""
+
+        recording,data=asset.channel.GetProgramInfo()
+        log("%s, %s" % (str(recording),str(data)))
+        if not recording and not data.has_key('currentShow'):
+            return
+        if recording:
+            c=ETV.RecordingChannelName()
+            log("Got recording, channel name %s"%c)
+            if c is None:
+                return
+            currentTitle="Now Recording!"
+            currentDesc=("Currently recording channel %s.  Program info is not available. " % c)
+
+        try:
+            currentShow=data['currentShow']
+            currentTitle += currentShow['title'] 
+            if currentShow.has_key('shortDescription'):
+                currentDesc += currentShow['shortDescription'] + " "
+            currentDesc += currentShow['startTime'].strftime("%I:%M") + "-" + currentShow['endTime'].strftime("%I:%M%p") 
+        except:
+            pass
+        try:
+            nextShow=data['nextShow']
+            nextTitle = nextShow['title']
+            nextTime = nextShow['startTime'].strftime("%I:%M%p") + "-" + nextShow['endTime'].strftime("%I:%M%p")
+            nextDesc = nextShow['shortDescription']
+        except:
+            pass
+
+        layer.setTitle_(currentTitle)
+        layer.setSummary_(currentDesc)
+        labels=[
+            "Next",
+            "Episode",
+            "At"
+            ]
+        data=[
+            nextTitle,
+            nextDesc,
+            nextTime
+            ]
+        layer.setMetadata_withLabels_(data,labels)
+
     def populateLayer_fromAsset_(self, layer, asset):
         log("We want to do magic stuff here for layer %s and asset %s" % (repr(layer), repr(asset)))
         if asset.IsSeries:
+            return
+        if asset.IsChannel:
+            self.populateChannelData(layer,asset)
             return
         layer.setTitle_(asset.rec.GetTitle())
         layer.setSummary_(asset.rec.GetDescription())
@@ -115,6 +189,14 @@ class PyeTVPreviewMetadataController(BRMetadataPreviewController):
         asset=PyeTVMediaAsset.alloc().initWithSeriesEpisode_(rec)
         self.setAsset_(asset)
         #self.setShowsMetadataImmediately_(True) 
+        return self
+
+    def initWithChannel_(self, channel):
+        log("initWithChannel_")
+        BRMetadataPreviewController.init(self)
+        asset=PyeTVMediaAsset.alloc().initWithChannel_(channel)
+        self.setAsset_(asset)
+        self.setShowsMetadataImmediately_(True) 
         return self
 
     def _updateMetadataLayer(self):

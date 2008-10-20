@@ -29,9 +29,23 @@ class ETVChannel(PyFR.Utilities.ControllerUtilities):
             app("EyeTV").channel_change(channel_number = self.chan.channel_number.get())
         except:
             # recording? channnel is busy & can't be changed
+            app("EyeTV").player_windows.get()[0].show()
             pass
         app("EyeTV").enter_full_screen()
 
+    def GetProgramInfo(self):
+        try:
+            app("EyeTV").player_windows.get()[0].show()
+            app("EyeTV").channel_change(channel_number = self.chan.channel_number.get())
+            app("EyeTV").player_windows.get()[0].hide()
+            return False,app("EyeTV").player_windows.get()[0].program_info.get()
+        except:
+            # recording? channnel is busy & can't be changed
+            info=app("EyeTV").player_windows.get()[0].program_info.get()
+            return True, info
+
+    def GetPreviewImagePath(self):
+        return "/Applications/EyeTV.app/Contents/Resources/eyetv.icns"
 
 class ETVRecording(PyFR.Utilities.ControllerUtilities):
     def __init__(self,rec):
@@ -267,6 +281,7 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         app("EyeTV").programs_window.hide()
         wins=app("EyeTV").player_windows.get()
         for w in wins:
+            w.hide()
             w.close()
 
     def DeleteRecording(self,rec):
@@ -276,7 +291,6 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
 
     def PlayCurrentRecording(self):
         log("PlayRecording called to play recording %s%s" % (self.rec.GetTitle(), self.rec.GetEpisodeAndDate()))
-        #self.HideWindows()
         time.sleep(0.5)
         app("EyeTV").play(self.rec.rec)
         app("EyeTV").play() # necessary if recording is paused
@@ -299,6 +313,14 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         app("System Events").keystroke("g",using=k.command_down)
         log("ShowProgramGuide done")
 
+    def IsRecording(self):
+        log("IsRecording called")
+        return app("EyeTV").is_recording.get()
+
+    def RecordingChannelName(self):
+        if not self.IsRecording():
+            return None
+        return app("EyeTV").current_channel.get()
 
     def UpdateScreenShot(self):
         try:
