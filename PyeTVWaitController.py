@@ -73,7 +73,11 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
         # there's no startup function, so just wait for stabilization first
         if self.exitCond is not None and self.tickCount > wait_before_exit_ticks: 
             log("calling exitCond(), tickCount=%d" % self.tickCount)
-            return not self.exitCond()
+            retval=self.exitCond()
+            if not retval:
+                ETV.UpdateScreenShot()
+                ETV.HideWindows()
+            return not retval
         return False
 
     def AboutToHideFR(self):
@@ -87,6 +91,6 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
         except:
             pass
         ETV.UpdateScreenShot()
-        #ETV.HideWindows()
+        ETV.HideWindows()
 
 

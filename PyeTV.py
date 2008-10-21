@@ -31,6 +31,34 @@ class RecordingsMenu(PyFR.MenuController.Menu):
     def GetRightText(self):
         return str(len(self.items) - 1)
 
+################################################################################
+# Work around EyeTV bug:
+#
+# When EyeTV is showing Live TV, and "menu" is pressed to return to front row
+# it (unfortunately) "remembers" that live tv was playing and tries to re-open
+# a live tv window after Front Row exits, even though we've close the window.
+#
+# Therefore, we have to install this "Cleaner" thread which waits until after
+# Front Row is no longer visible to close all windows.
+#
+# When we exit Front Row, we don't want EyeTV windows open.
+
+import threading
+CleanerShouldHideWindow=False
+class Cleaner ( threading.Thread ):
+    def run ( self ):
+        global CleanerShouldHideWindow
+
+        self.shouldHide=False
+        fr = BRAppManager.sharedApplication().delegate()
+
+        while(1):
+            time.sleep(2)
+            if CleanerShouldHideWindow and not fr.uiVisible():
+                # by user requests; let's hide all EyeTV windows before we leave the appliance
+                ETV.HideWindows()
+                CleanerShouldHideWindow=False
+
 
 ################################################################################
 
@@ -235,19 +263,24 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         ac=PyFR.MenuController.MenuController.initWithMenu_(self,self.MainMenu)
         log("Done initing menus")
         return ac
+
+    def willBePushed(self):
+        global CleanerShouldHideWindow
+        CleanerShouldHideWindow =  False
         
     def willBePopped(self):
-        # by user requests; let's hide all EyeTV windows before we leave the appliance
+        global CleanerShouldHideWindow
         log("ETVMenuController willBePopped")
-        ETV.HideWindows()
+        CleanerShouldHideWindow = True 
         return BRMediaMenuController.willBePopped(self)
-
 
 
 class RUIPythonAppliance( PyFR.Appliance.Appliance ):
 
     def getController(self):
         self.log("************ PyeTV Starting **********************************")
+
+        Cleaner().start() # init clean up thread 
 
         # Optionally enable ObjC logging now
         #a=PyFR.Utilities.ControllerUtilities();
@@ -258,8 +291,6 @@ class RUIPythonAppliance( PyFR.Appliance.Appliance ):
 
         ret=ETVMenuController.alloc().init()
         return ret
-
-
 
 
 

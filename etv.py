@@ -37,7 +37,7 @@ class ETVChannel(PyFR.Utilities.ControllerUtilities):
         try:
             app("EyeTV").player_windows.get()[0].show()
             app("EyeTV").channel_change(channel_number = self.chan.channel_number.get())
-            app("EyeTV").player_windows.get()[0].hide()
+            app("EyeTV").player_windows.get()[0].close()
             return False,app("EyeTV").player_windows.get()[0].program_info.get()
         except:
             # recording? channnel is busy & can't be changed
@@ -219,6 +219,7 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         log("IsPlaying called")
         try:
             ret=app("EyeTV").playing.get()
+            log("got ret" + str(ret))
         except:
             return false
         log("IsPlaying done")
@@ -262,7 +263,7 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
     def ShowGuide(self):
         log("ShowGuide called")
         self.ShowMenu()
-        time.sleep(2) # give it time to happen
+        time.sleep(0.75) # give it time to happen
         app("System Events").keystroke("g",using=k.command_down)
         log("ShowGuide done")
 
@@ -276,13 +277,17 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         self.fromBeginning=fromBeginning
 
     def HideWindows(self):
-        log("ETV: in HideWindows")
-        app("EyeTV").controller_window.hide()
-        app("EyeTV").programs_window.hide()
-        wins=app("EyeTV").player_windows.get()
-        for w in wins:
-            w.hide()
-            w.close()
+        try:
+           log("ETV: in HideWindows")
+           app("EyeTV").controller_window.hide()
+           app("EyeTV").programs_window.hide()
+           wins=app("EyeTV").player_windows.get()
+           for w in wins:
+               log("ETV closing window %s" % str(w))
+               w.hide()
+               w.close()
+        except:
+            pass
 
     def DeleteRecording(self,rec):
         app("EyeTV").stop()
@@ -291,7 +296,7 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
 
     def PlayCurrentRecording(self):
         log("PlayRecording called to play recording %s%s" % (self.rec.GetTitle(), self.rec.GetEpisodeAndDate()))
-        time.sleep(0.5)
+        time.sleep(0.25)
         app("EyeTV").play(self.rec.rec)
         app("EyeTV").play() # necessary if recording is paused
         if self.fromBeginning:
