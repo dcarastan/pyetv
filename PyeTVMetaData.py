@@ -68,10 +68,6 @@ class PyeTVMetadataPopulator(NSObject):
         NSObject.init(self);
         return self
 
-    # helper exitCondition for opening eyetv window
-    def ReturnFalse(self):
-        return False
-
     def populateChannelData(self, layer, asset):
         log("in populateChannelData")
 

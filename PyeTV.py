@@ -36,7 +36,7 @@ class RecordingsMenu(PyFR.MenuController.Menu):
 #
 # When EyeTV is showing Live TV, and "menu" is pressed to return to front row
 # it (unfortunately) "remembers" that live tv was playing and tries to re-open
-# a live tv window after Front Row exits, even though we've close the window.
+# a live tv window after Front Row exits, even though we've closed the window.
 #
 # Therefore, we have to install this "Cleaner" thread which waits until after
 # Front Row is no longer visible to close all windows.
@@ -176,7 +176,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         log("Got idx: %s rec %s" % (repr(idx), repr(rec)))
         if idx==0 or idx==1:
             ETV.SetCurrentRecording(rec,idx==1)
-            newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(ETV.PlayCurrentRecording,ETV.IsPlaying)
+            newCon=PyeTVWaitController.alloc().initWithStartup_(ETV.PlayCurrentRecording)
             return controller.stack().pushController_(newCon)
         if idx==2:
             return self.ConfirmDeleteRecordingDialog(controller, rec)
@@ -226,14 +226,13 @@ class ETVMenuController(PyFR.MenuController.MenuController):
 
     # WaitController startup callback
     def PlayChannel(self, controller, chan):
-        newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(chan.Play,ETV.IsPlaying)
+        newCon=PyeTVWaitController.alloc().initWithStartup_(chan.Play)
         return controller.stack().pushController_(newCon)
 
     # WaitController startup callback
     def StartETVGuide(self, controller, arg):
         log("in StartETVGuide")
-        #newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,ETV.IsFullScreen)
-        newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,None)
+        newCon=PyeTVWaitController.alloc().initWithStartup_(ETV.ShowGuide)
         return controller.stack().pushController_(newCon)
 
     # re-create series menu tree and sub it into the main menu

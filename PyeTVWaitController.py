@@ -3,6 +3,7 @@ from PyFR import *
 
 import PyFR.WaitController
 import PyFR.Utilities
+from PyFR.BackRow import *
 
 from etv import ETV
 import Logger
@@ -28,11 +29,11 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
        
     """
 
-    def initWithStartup_exitCond_(self, startup=None, exitCond=None):
-        log("initWithStartup_exitCond_")
+    def initWithStartup_(self, startup=None):
+        log("initWithStartup_")
         self.tickCount=0
         self.startup=startup
-        self.exitCond=exitCond
+        self.frcontroller = BRAppManager.sharedApplication().delegate()
         return PyFR.WaitController.WaitController.initWithText_(self, "Launching EyeTV")
 
     def PyFR_start(self):
@@ -56,8 +57,6 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
         if self.call_startup and self.tickCount >= wait_before_calling_startup:
             try:
                 self.startup()
-                if self.exitCond is None:
-                    self.textController.setTitle_("Press menu if you see this.") 
                 self.call_startup = False
             except:
                 log("App::startup failed with tickCount=%d" % self.tickCount)
@@ -70,14 +69,16 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
             AutoQuitManager.sharedManager()._stopAutoQuitTimer()
             AutoQuitManager.sharedManager().setAutoQuitEnabled_(False)
 
-        # there's no startup function, so just wait for stabilization first
-        if self.exitCond is not None and self.tickCount > wait_before_exit_ticks: 
-            log("calling exitCond(), tickCount=%d" % self.tickCount)
-            retval=self.exitCond()
-            if not retval:
-                ETV.UpdateScreenShot()
-                ETV.HideWindows()
-            return not retval
+        # if not stabilized, we don't exit EyeTV
+        if self.tickCount < wait_before_exit_ticks:
+            return False
+
+        # if we become visible after stabilization, then we've exited EyeTV and we need to pop
+        if self.frcontroller.uiVisible():
+            ETV.UpdateScreenShot()
+            ETV.HideWindows()
+            return True
+
         return False
 
     def AboutToHideFR(self):
