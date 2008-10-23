@@ -53,7 +53,7 @@ class Cleaner ( threading.Thread ):
         fr = BRAppManager.sharedApplication().delegate()
 
         while(1):
-            time.sleep(2)
+            time.sleep(0.5)
             if CleanerShouldHideWindow and not fr.uiVisible():
                 # by user requests; let's hide all EyeTV windows before we leave the appliance
                 ETV.HideWindows()
