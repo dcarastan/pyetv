@@ -252,14 +252,11 @@ class ETVMenuController(PyFR.MenuController.MenuController):
                 self.series_menu,
                 self.MakeChannelsMenu(),
                 PyFR.MenuController.MenuItem("Program guide", self.StartETVGuide),
-                #            ,PyFR.MenuController.MenuItem("Comskip off",   ShowGuide_MenuHandler)
-                #            ,PyFR.MenuController.MenuItem("Comskip off",   ShowGuide_MenuHandler)
-                #            ,PyFR.MenuController.MenuItem("Option dialog",   testOptionDialogTest, "Text test")
-                #            ,PyFR.MenuController.MenuItem("Text test",   TestText_MenuHandler, "Text test")
                 ])
 
         # chain to parent's ctor
         ac=PyFR.MenuController.MenuController.initWithMenu_(self,self.MainMenu)
+
         log("Done initing menus")
         return ac
 
