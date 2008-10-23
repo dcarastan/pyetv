@@ -22,9 +22,8 @@ class ETVChannel(PyFR.Utilities.ControllerUtilities):
         return str(self.chan.channel_number.get()) + " - " + self.chan.name.get()
 
     def Play(self):
-        app("EyeTV").player_windows.close()
-        app("EyeTV").window.close()
         log("Trying2 to play channel number %d" % self.chan.channel_number.get())
+        ETV.HideWindows()
         try:
             app("EyeTV").channel_change(channel_number = self.chan.channel_number.get())
         except:
@@ -262,8 +261,9 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
 
     def ShowGuide(self):
         log("ShowGuide called")
+        self.HideWindows()
         self.ShowMenu()
-        time.sleep(0.75) # give it time to happen
+        time.sleep(0.25) # give it time to happen
         app("System Events").keystroke("g",using=k.command_down)
         log("ShowGuide done")
 
@@ -312,11 +312,6 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         log("JumpTo called")
         app("EyeTV").jump(to=position)
         log("JumpTo done")
-
-    def ShowProgramGuide(self):
-        log("ShowProgramGuide called")
-        app("System Events").keystroke("g",using=k.command_down)
-        log("ShowProgramGuide done")
 
     def IsRecording(self):
         log("IsRecording called")
