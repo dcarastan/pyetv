@@ -76,7 +76,8 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         return PyeTVPreviewMetadataController.alloc().initWithRecording_(rec[0])
 
     def GetSeriesMetadata(self, controller, series):
-        log("requested preview for series %s" % (series))
+        log("Got series %s " % series.encode("ascii","replace"))
+        #log(u"requested preview for series %s" % (series))
         if series not in self.series_dict.keys():
             return None
         return PyeTVPreviewMetadataController.alloc().initWithSeriesEpisode_(self.series_dict[series][0])
@@ -165,15 +166,14 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         return False
 
     def RecordingOptionsMenuHandler(self, controller, data):
-        log("RecordingOptionsMenuHandler, controller is %s" % str(controller))
-        log("Stack is %s, controller stack is %s" % (self.stack(),controller.stack()))
+        log("in RecordingOptionsMenuHandler")
         try:
             rec=data[0]
             idx=data[1]
         except:
             return
 
-        log("Got idx: %s rec %s" % (repr(idx), repr(rec)))
+        log("Got idx: %s rec %s" % (repr(idx), repr(rec).encode("ascii","replace")))
         if idx==0 or idx==1:
             fn=lambda : ETV.PlayRecording(rec,idx==1)
             newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(fn,None)
