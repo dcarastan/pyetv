@@ -27,26 +27,11 @@ DEVELOPERS:
 
 OUTSTANDING ISSUES:
 
-     After pausing a recording in EyeTV, and returning to Front Row,
-     we do not return to the same place in the menu hierarchy.
-
-     The item count in the menu items is not properly updated after
-     deleting an item.
-
-     There is no photo preview.
-
-     EyeTV must be running before Front Row or the list of recordings
-     takes too long to acquire, the EyeTV recordings menu is empty.
+     EyeTV must be running before Front Row is started.
 
      We have to expose the desktop (hide Front Row) *before* we can
      tell EyeTV to go full screen, so the transition between FR and
      EyeTV is somewhat ugly.
-
-     Not (yet) integrated with etv-comskip:
-        http://code.google.com/p/etv-comskip/
-
-     The timeouts (amount of time we have to wait before sendig
-     certain events to EyeTV) could use some more tuning.
 
 LICENSE:
 	These files are placed under the BSD license.

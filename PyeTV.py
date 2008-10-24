@@ -175,8 +175,8 @@ class ETVMenuController(PyFR.MenuController.MenuController):
 
         log("Got idx: %s rec %s" % (repr(idx), repr(rec)))
         if idx==0 or idx==1:
-            ETV.SetCurrentRecording(rec,idx==1)
-            newCon=PyeTVWaitController.alloc().initWithStartup_(ETV.PlayCurrentRecording)
+            fn=lambda : ETV.PlayRecording(rec,idx==1)
+            newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(fn,None)
             return controller.stack().pushController_(newCon)
         if idx==2:
             return self.ConfirmDeleteRecordingDialog(controller, rec)
@@ -226,19 +226,25 @@ class ETVMenuController(PyFR.MenuController.MenuController):
 
     # WaitController startup callback
     def PlayChannel(self, controller, chan):
-        newCon=PyeTVWaitController.alloc().initWithStartup_(chan.Play)
+        newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(chan.Play,None)
         return controller.stack().pushController_(newCon)
 
     # WaitController startup callback
     def StartETVGuide(self, controller, arg):
         log("in StartETVGuide")
-        newCon=PyeTVWaitController.alloc().initWithStartup_(ETV.ShowGuide)
+        newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,None)
         return controller.stack().pushController_(newCon)
 
     # re-create series menu tree and sub it into the main menu
     def updateMainMenu(self):
         self.series_menu=self.MakeSeriesMenu()
         self.MainMenu.items[0]=self.series_menu
+
+
+    def StartEyeTV(self):
+        if self.AppRunning("EyeTV"):
+            return
+        ETV.GetRecordings()
 
     def init(self):
         self.HasETVComskip = os.path.exists("/Library/Application Support/ETVComskip/ComSkipper.app") and \
@@ -285,7 +291,9 @@ class RUIPythonAppliance( PyFR.Appliance.Appliance ):
         # Or, turn on logging to /tmp/msgSends while /tmp/FRLOG exists
         #PyFR.Debugging.EnableObjcLogger()
 
-        ret=ETVMenuController.alloc().init()
+        emc=ETVMenuController.alloc()
+        emc.StartEyeTV() # make sure EyeTV is started before we try to use it
+        ret=emc.init()
         return ret
 
 

@@ -12,8 +12,6 @@ def log(s):
     #Logger.log(s)
     pass
 
-ETV_CURRENT_RECORDING=None
-
 class ETVChannel(PyFR.Utilities.ControllerUtilities):
     def __init__(self,chan):
         self.chan=chan
@@ -248,19 +246,12 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
     def ShowGuide(self):
         log("ShowGuide called")
         self.HideWindows()
-        self.ShowMenu()
+        app("EyeTV").play()
+        app("EyeTV").enter_full_screen(True)
+        app("EyeTV").full_screen_menu.set(True)
         time.sleep(0.25) # give it time to happen
         app("System Events").keystroke("g",using=k.command_down)
         log("ShowGuide done")
-
-    def GetCurrentRecording(self):
-        return self.rec
-
-    def SetCurrentRecording(self, rec, fromBeginning):
-        global ETV_CURRENT_RECORDING
-        self.rec=rec
-        ETV_CURRENT_RECORDING=self.rec
-        self.fromBeginning=fromBeginning
 
     def HideWindows(self):
         try:
@@ -280,18 +271,18 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         app("EyeTV").player_windows.close()
         app("EyeTV").delete(rec.rec)
 
-    def PlayCurrentRecording(self):
-        log("PlayRecording called to play recording %s%s" % (self.rec.GetTitle(), self.rec.GetEpisodeAndDate()))
+    def PlayRecording(self,rec,fromBeginning):
+        log("PlayRecording called to play recording %s%s" % (rec.GetTitle(), rec.GetEpisodeAndDate()))
         time.sleep(0.25)
-        app("EyeTV").play(self.rec.rec)
+        app("EyeTV").play(rec.rec)
         app("EyeTV").play() # necessary if recording is paused
-        if self.fromBeginning:
+        if fromBeginning:
             self.JumpTo(0)
         app("EyeTV").enter_full_screen()
 
         # sometimes it doesn't play.  tell it again, just in case
         time.sleep(0.5)
-        app("EyeTV").play(self.rec.rec)
+        app("EyeTV").play(rec.rec)
         log("PlayRecording done")
 
     def JumpTo(self,position):

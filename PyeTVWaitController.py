@@ -29,10 +29,11 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
        
     """
 
-    def initWithStartup_(self, startup=None):
+    def initWithStartup_exitCond_(self, startup=None,exitCond=None):
         log("initWithStartup_")
         self.tickCount=0
         self.startup=startup
+        self.exitCond=exitCond
         self.frcontroller = BRAppManager.sharedApplication().delegate()
         return PyFR.WaitController.WaitController.initWithText_(self, "Launching EyeTV")
 
@@ -76,6 +77,10 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
         # if we become visible after stabilization, then we've exited EyeTV and we need to pop
         if self.frcontroller.uiVisible():
             log("FR ui is visible, so hiding windows")
+            ETV.HideWindows()
+            return True
+
+        if self.exitCond is not None and self.exitCond():
             ETV.HideWindows()
             return True
 

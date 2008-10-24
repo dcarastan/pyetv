@@ -30,6 +30,6 @@ installers: real
 	osacompile -o dist/UnInstall\ PyeTV.app UnInstall.applescript
 
 dmg: installers
-		cd dist; rm *.dmg*; hdiutil create -fs HFS+ -format UDBZ -volname ${IMGNAME} -srcfolder . ${IMGNAME}
+		cd dist; rm *.dmg*; hdiutil create -fs HFS+ -format UDZO -volname ${IMGNAME} -srcfolder . ${IMGNAME}
 
 dist:  clean real dmg
