@@ -75,7 +75,7 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
 
         # if we become visible after stabilization, then we've exited EyeTV and we need to pop
         if self.frcontroller.uiVisible():
-            ETV.UpdateScreenShot()
+            log("FR ui is visible, so hiding windows")
             ETV.HideWindows()
             return True
 
@@ -91,7 +91,6 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
             self.stack().popController()
         except:
             pass
-        ETV.UpdateScreenShot()
         ETV.HideWindows()
 
 

@@ -67,28 +67,14 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
         log("GetEpisode done")
         return ret
 
-    # must be a HFS filename (e.g. ":tmp:screenshot.jpg"), not posix (/tmp/screenshot.jpg)
-    def TakeScreenshot(self, fname):
-        try:
-            app("EyeTV").screenshot.set(fname)
-            return True
-        except:
-            return False
-
     def GetPreviewImagePath(self):
         imgpath=""
         try:
-            if self == ETV_CURRENT_RECORDING:
-                # try screenshot first
-                fname=":tmp:screenshot.jpg"
-                app("EyeTV").screenshot.set(fname)
-                return "/tmp/screenshot.jpg"
-            else:
-                loc=self.rec.location.get()
-                f=loc.file.path
-                f=f[:-6]+"tiff"
-                if len(f)>0:
-                    imgpath=f
+            loc=self.rec.location.get()
+            f=loc.file.path
+            f=f[:-6]+"tiff"
+            if len(f)>0:
+                imgpath=f
         except:
             pass
         return imgpath
@@ -322,9 +308,15 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
             return None
         return app("EyeTV").current_channel.get()
 
+    # this was only used to update the screenshot of the current recording
+    # while the window was still open.  it's no longer really used b/c we
+    # the screenshot is automatically updated in the .eyetvr file when the
+    # window is closed, and we are now closing the window now after
+    # returning to PyeTV
     def UpdateScreenShot(self):
         try:
             app("EyeTV").screenshot.set(":tmp:screenshot.jpg")
+            pass
         except:
             pass
 
