@@ -25,6 +25,9 @@ test:
 tar:
 	pushd ..; tar -czvf ${IMGNAME}.tar.gz PyeTV; popd
 
+doc:
+	cp README.txt dist
+
 installers: real
 	osacompile -o dist/Install\ PyeTV.app Install.applescript
 	osacompile -o dist/UnInstall\ PyeTV.app UnInstall.applescript
@@ -32,4 +35,4 @@ installers: real
 dmg: installers
 		cd dist; rm *.dmg*; hdiutil create -fs HFS+ -format UDZO -volname ${IMGNAME} -srcfolder . ${IMGNAME}
 
-dist:  clean real dmg
+dist:  clean real doc dmg
