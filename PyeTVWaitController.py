@@ -96,6 +96,6 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
             self.stack().popController()
         except:
             pass
-        ETV.HideWindows()
+        #ETV.HideWindows()
 
 

@@ -9,7 +9,7 @@ from etv import ETV
 
 import Logger
 def log(s):
-    #Logger.log(s)
+    Logger.log(s)
     pass
 
 class PyeTVMediaAsset(BRSimpleMediaAsset):
@@ -17,7 +17,7 @@ class PyeTVMediaAsset(BRSimpleMediaAsset):
     Defines a FrontRow media asset from a EyeTV recording  
     """
     def initWithRecording_(self, rec):
-        log("PyeTVMediaAsset inited for rec %s" % rec.GetTitle());
+        log("PyeTVMediaAsset inited for rec %s" % rec.GetTitle().encode("ascii","replace"))
         BRSimpleMediaAsset.initWithMediaURL_(self,"")
         self.channel=None
         self.rec=rec
@@ -27,7 +27,7 @@ class PyeTVMediaAsset(BRSimpleMediaAsset):
         return self
 
     def initWithSeriesEpisode_(self, rec):
-        log("PyeTVMediaAsset inited for rec %s" % rec.GetTitle());
+        log("PyeTVMediaAsset inited for rec %s" % rec.GetTitle().encode("ascii","replace"))
         BRSimpleMediaAsset.initWithMediaURL_(self,"")
         self.channel=None
         self.rec=rec
@@ -37,7 +37,7 @@ class PyeTVMediaAsset(BRSimpleMediaAsset):
         return self
 
     def initWithChannel_(self, chan):
-        log("PyeTVMediaAsset inited for channel %s" % repr(chan));
+        log("PyeTVMediaAsset inited for channel %s" % repr(chan).encode("ascii","replace"))
         BRSimpleMediaAsset.initWithMediaURL_(self,"")
         self.rec=None
         self.channel=chan
@@ -78,16 +78,16 @@ class PyeTVMetadataPopulator(NSObject):
         currentDesc=""
 
         recording,data=asset.channel.GetProgramInfo()
-        log("%s, %s" % (str(recording),str(data)))
+        log("%s, %s" % (str(recording).encode("ascii","replace"),str(data).encode("ascii","replace")))
         if not recording and not data.has_key('currentShow'):
             return
         if recording:
             c=ETV.RecordingChannelName()
-            log("Got recording, channel name %s"%c)
+            log("Got recording, channel name %s" % c.encode("ascii","replace"))
             if c is None:
                 return
             currentTitle="Now Recording!"
-            currentDesc=("Currently recording channel %s.  Program info is not available. " % c)
+            currentDesc=("Currently recording channel %s.  Program info is not available. " % c.encode("ascii","replace"))
 
         try:
             currentShow=data['currentShow']
@@ -155,18 +155,27 @@ class PyeTVMetadataPopulatorFactory(BRSingleton):
     __Instance = None
 
     def init(self):
+        log("initing Populator factory")
         __Instance=self
         self.pop=PyeTVMetadataPopulator.alloc().init()
         return BRSingleton.init(self)
 
+    def dealloc(self):
+        log("Deallocing populator factory")
+        self.pop.release()
+        super(BRSingleton,self).dealloc()
+
     # Note: this isn't really a good singleton implementation, but it's good enough for our purposes here
     @classmethod
     def singleton(self):
+        log("returning populator singleton")
         return self.__Instance
 
     def populatorForAsset_(self, asset):
         return self.pop
 
+# create instance of this to use below
+newPopFactory=PyeTVMetadataPopulatorFactory.alloc().init()
 
 class PyeTVPreviewMetadataController(BRMetadataPreviewController):
     """
@@ -174,6 +183,7 @@ class PyeTVPreviewMetadataController(BRMetadataPreviewController):
     """
 
     def initWithRecording_(self, rec):
+        log("metadataController::initWithRecording_ %s" % repr(self))
         BRMetadataPreviewController.init(self)
         asset=PyeTVMediaAsset.alloc().initWithRecording_(rec)
         self.setAsset_(asset)
@@ -181,6 +191,7 @@ class PyeTVPreviewMetadataController(BRMetadataPreviewController):
         return self
 
     def initWithSeriesEpisode_(self, rec):
+        log("metadataController::initWithSeriesEpisode_ %s" % repr(self))
         BRMetadataPreviewController.init(self)
         asset=PyeTVMediaAsset.alloc().initWithSeriesEpisode_(rec)
         self.setAsset_(asset)
@@ -188,7 +199,7 @@ class PyeTVPreviewMetadataController(BRMetadataPreviewController):
         return self
 
     def initWithChannel_(self, channel):
-        log("initWithChannel_")
+        log("metadataController::initWithChannel_: %s" % repr(self))
         BRMetadataPreviewController.init(self)
         asset=PyeTVMediaAsset.alloc().initWithChannel_(channel)
         self.setAsset_(asset)
@@ -196,13 +207,22 @@ class PyeTVPreviewMetadataController(BRMetadataPreviewController):
         return self
 
     def _updateMetadataLayer(self):
-        # create temporary populator factory and replace standard one ---
-        # I don't know how to get the standard populator to properly identify the asset,
-        # and even if I did, one of the pre-defined assets probably wouldn't populate with the fields I want!
-
-        # and yes, this is a horrible abuse of setSingleton_.
         log("PyeTVPreviewMetadataLayerController::_updateMetadataLayer")
+
+        # The standard populator doesn't understand our assets, so we
+        # temporarily replace the std populator factory with our populator
+        # factory.  (and yes, this is a horrible abuse of setSingleton_.)
+
         oldPopFactory=BRMetadataPopulatorFactory.sharedInstance()
-        BRMetadataPopulatorFactory.setSingleton_(PyeTVMetadataPopulatorFactory.alloc().init())
+        BRMetadataPopulatorFactory.setSingleton_(newPopFactory)
         BRMetadataPreviewController._updateMetadataLayer(self)
         BRMetadataPopulatorFactory.setSingleton_(oldPopFactory)
+
+    def dealloc(self):
+        log("metadataController dealloc for %s" % repr(self))
+        if self.asset() is not None:
+            log("releasing asset %s" % repr(self.asset()))
+            self.asset().release()
+        super(BRMetadataPreviewController,self).dealloc()
+
+
