@@ -7,10 +7,7 @@ import string
 from PyFR.BackRow import *
 from etv import ETV
 
-import Logger
-def log(s):
-    Logger.log(s)
-    pass
+from Logger import *
 
 class PyeTVMediaAsset(BRSimpleMediaAsset):
     """
@@ -83,11 +80,11 @@ class PyeTVMetadataPopulator(NSObject):
             return
         if recording:
             c=ETV.RecordingChannelName()
-            log("Got recording, channel name %s" % c.encode("ascii","replace"))
+            log("Got recording, channel name %s" % c)
             if c is None:
                 return
             currentTitle="Now Recording!"
-            currentDesc=("Currently recording channel %s.  Program info is not available. " % c.encode("ascii","replace"))
+            currentDesc=("Currently recording channel %s.  Program info is not available. " % c)
 
         try:
             currentShow=data['currentShow']
@@ -162,7 +159,7 @@ class PyeTVMetadataPopulatorFactory(BRSingleton):
 
     def dealloc(self):
         log("Deallocing populator factory")
-        self.pop.release()
+        #self.pop.release()
         super(BRSingleton,self).dealloc()
 
     # Note: this isn't really a good singleton implementation, but it's good enough for our purposes here
@@ -222,7 +219,7 @@ class PyeTVPreviewMetadataController(BRMetadataPreviewController):
         log("metadataController dealloc for %s" % repr(self))
         if self.asset() is not None:
             log("releasing asset %s" % repr(self.asset()))
-            self.asset().release()
+            #self.asset().release()
         super(BRMetadataPreviewController,self).dealloc()
 
 

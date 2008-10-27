@@ -7,10 +7,7 @@ import time
 import PyFR.Utilities
 
 
-import Logger
-def log(s):
-    #Logger.log(s)
-    pass
+from Logger import *
 
 class ETVChannel(PyFR.Utilities.ControllerUtilities):
     def __init__(self,chan):

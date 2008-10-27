@@ -19,10 +19,7 @@ from PyeTVMetaData import *
 from PyeTVWaitController import *
 from etv import ETV
 
-import Logger
-def log(s):
-    #Logger.log(s)
-    pass
+from Logger import *
 
 SERIES_LABEL="Recordings by series"
 ALL_RECORDINGS_LABEL="All recordings"
@@ -70,30 +67,23 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         return False
 
     def GetRecordingMetadata(self, controller, rec):
-        log("in GetRecordingMetadata, setting autorelease")
         ret=PyeTVPreviewMetadataController.alloc().initWithRecording_(rec)
-        ret.autorelease()
         return ret
 
     def GetRecordingMetadataFromTuple(self, controller, rec):
-        log("in GetRecordingMetadataFromTuple, setting autorelease")
         ret=PyeTVPreviewMetadataController.alloc().initWithRecording_(rec[0])
-        ret.autorelease()
         return ret
 
     def GetSeriesMetadata(self, controller, series):
-        log("in GetSeriesMetadata for series %s, setting autorelease " % series.encode("ascii","replace"))
         #log(u"requested preview for series %s" % (series))
         if series not in self.series_dict.keys():
             return None
         ret=PyeTVPreviewMetadataController.alloc().initWithSeriesEpisode_(self.series_dict[series][0])
-        ret.autorelease()
         return ret
 
     def GetChannelMetadata(self, controller, channel):
         log("requested preview for channel %s" % str(channel))
         ret=PyeTVPreviewMetadataController.alloc().initWithChannel_(channel)
-        ret.autorelease()
         return ret
 
     def MakeSeriesMenu(self):
@@ -143,8 +133,8 @@ class ETVMenuController(PyFR.MenuController.MenuController):
             title="Are you sure you want to delete '" + rec.GetTitle()+ ": " + rec.GetEpisode() + " " + rec.GetStartTime() + "' ?"
             dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Delete recording(s):", options, self.ConfirmDeleteRecordingDialogHandler)
             dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
-        #dlg.autorelease() #FIXME: how to release this?
-        return controller.stack().pushController_(dlg)
+        ret=controller.stack().pushController_(dlg)
+        return ret
 
     def ConfirmDeleteRecordingDialogHandler(self, controller, idx, item):
         log("ConfirmDeleteRecordingDialogHandler")
@@ -167,13 +157,11 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         for item in self.series_menu.items:
             if item.page_title==currentSeries:
                 con=PyFR.MenuController.MenuController.alloc().initWithMenu_(item)
-                #con.autorelease() # FIXME: how to release this?
                 controller.stack().replaceControllersAboveLabel_withController_(SERIES_LABEL,con)
                 return False
 
         # series is gone, back up to EyeTV menu
         con=PyFR.MenuController.MenuController.alloc().initWithMenu_(self.series_menu)
-        #con.autorelease() # FIXME: how to release this
         controller.stack().replaceControllersAboveLabel_withController_("EyeTV",con)
         return False
 
@@ -189,8 +177,8 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         if idx==0 or idx==1:
             fn=lambda : ETV.PlayRecording(rec,idx==1)
             newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(fn,None)
-            #newCon.autorelease() # FIXME: how to release this
-            return controller.stack().pushController_(newCon)
+            ret=controller.stack().pushController_(newCon)
+            return ret
         if idx==2:
             return self.ConfirmDeleteRecordingDialog(controller, rec)
         if idx==3:
@@ -229,27 +217,27 @@ class ETVMenuController(PyFR.MenuController.MenuController):
 
         menu=PyFR.MenuController.Menu(rec.GetTitle(), items)
         dlg=PyFR.MenuController.MenuController.alloc().initWithMenu_(menu)
-        #dlg.autorelease() # FIXME: how to release this
         self.CurrentOptionsMenu = dlg
         return dlg
 
     def RecordingOptionsMenu(self, controller, rec):
         log("in recording options dialog")
         dlg=self.GetRecordingOptionsMenu(rec)
-        return controller.stack().pushController_(dlg)
+        ret=controller.stack().pushController_(dlg)
+        return ret
 
     # WaitController startup callback
     def PlayChannel(self, controller, chan):
         newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(chan.Play,None)
-        #newCon.autorelease() # FIXME: how to release this
-        return controller.stack().pushController_(newCon)
+        ret=controller.stack().pushController_(newCon)
+        return ret
 
     # WaitController startup callback
     def StartETVGuide(self, controller, arg):
         log("in StartETVGuide")
         newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,None)
-        #newCon.autorelease() # FIXME: how to release this
-        return controller.stack().pushController_(newCon)
+        ret=controller.stack().pushController_(newCon)
+        return ret
 
     # re-create series menu tree and sub it into the main menu
     def updateMainMenu(self):
@@ -310,7 +298,6 @@ class RUIPythonAppliance( PyFR.Appliance.Appliance ):
         emc=ETVMenuController.alloc()
         emc.StartEyeTV() # make sure EyeTV is started before we try to use it
         ret=emc.init()
-        #ret.autorelease()
         return ret
 
 
