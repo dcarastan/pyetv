@@ -2,11 +2,11 @@ from distutils.core import setup
 import py2app
 
 
-plist = dict(NSPrincipalClass='RUIPythonAppliance',
+plist = dict(NSPrincipalClass='RUIPyeTVAppliance',
              CFBundleDevelopmentRegion='English',
-             CFBundleExecutable='EyeTV',
-             CFBundleName='EyeTV',
-             CFBundleIdentifier="com.apple.frontrow.appliance.EyeTV",
+             CFBundleExecutable='PyeTV',
+             CFBundleName='PyeTV',
+             CFBundleIdentifier="com.apple.frontrow.appliance.PyeTV",
              CFBundleInfoDictionaryVersion='6.0',
              CFBundlePackageType='BNDL',
              CFBundleSignature='????',
