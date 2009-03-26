@@ -246,7 +246,7 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         app("EyeTV").play()
         app("EyeTV").enter_full_screen(True)
         app("EyeTV").full_screen_menu.set(True)
-        time.sleep(0.25) # give it time to happen
+        #time.sleep(0.25) # give it time to happen
         app("System Events").keystroke("g",using=k.command_down)
         log("ShowGuide done")
 
@@ -270,15 +270,12 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
 
     def PlayRecording(self,rec,fromBeginning):
         log("PlayRecording called to play recording %s%s" % (rec.GetTitle(), rec.GetEpisodeAndDate()))
-        time.sleep(0.25)
         app("EyeTV").play(rec.rec)
         app("EyeTV").play() # necessary if recording is paused
         if fromBeginning:
             self.JumpTo(0)
         app("EyeTV").enter_full_screen()
-
         # sometimes it doesn't play.  tell it again, just in case
-        time.sleep(0.5)
         app("EyeTV").play(rec.rec)
         log("PlayRecording done")
 
@@ -309,3 +306,4 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
             pass
 
 ETV=EyeTV()
+
