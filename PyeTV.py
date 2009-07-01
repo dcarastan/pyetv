@@ -2,8 +2,7 @@
 # 
 # Copyright 2008 Jon A Christopher. All rights reserved.
 
-import os, time, string
-import objc
+import os, time
 
 # PyFR imports
 from PyFR.BackRow import *
@@ -21,12 +20,18 @@ from etv import ETV
 
 from Logger import *
 
+import sys
+
 SERIES_LABEL="Recordings by series"
 ALL_RECORDINGS_LABEL="All recordings"
 
 class RecordingsMenu(PyFR.MenuController.Menu):
     def GetRightText(self):
-        return str(len(self.items) - 1)
+        return str(len(self.items))
+
+class SeriesMenu(PyFR.MenuController.Menu):
+    def GetRightText(self):
+        return str(len(self.items)-1)
 
 ################################################################################
 # Work around EyeTV bug:
@@ -93,7 +98,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         k=series.keys()
         k.sort()
         for s in k:
-            submenu=RecordingsMenu(s, [], self.GetSeriesMetadata)
+            submenu=SeriesMenu(s, [], self.GetSeriesMetadata)
             root.AddItem(submenu)
 
             # sort by date
@@ -188,7 +193,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
             else:
                 os.system("/Library/Application\ Support/ETVComskip/ComSkipper.app/Contents/MacOS/ComSkipper &")
                 self.CurrentOptionsMenu.ds.menu.items[3].layer.setTitle_("ComSkipper                      [On]") # deep magic
-            time.sleep(0.5)
+            #time.sleep(0.5)
 
         if idx==4:
             log("/Library/Application\ Support/ETVComskip/MarkCommercials.app/Contents/MacOS/MarkCommercials --log %s &" % rec.rec.unique_ID.get())
@@ -280,12 +285,29 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         CleanerShouldHideWindow = True 
         return BRMediaMenuController.willBePopped(self)
 
+class RUIPyeTVAppliance( PyFR.Appliance.Appliance ):
+    def initialize(cls):
+        name =  u"com.apple.frontrow.appliance.PyeTV"
+        BRFeatureManager.sharedInstance().enableFeatureNamed_( name )
 
-class RUIPythonAppliance( PyFR.Appliance.Appliance ):
+    @classmethod
+    def className(cls):
+        # This more sophisticated method doesn't seem to be necessary!
+        #  
+        # clsName =  cls.__name__
+        # backtrace = BRBacktracingException.backtrace()
+        # range = backtrace.rangeOfString_( "_loadApplianceInfoAtPath:" )
+        # if range.location == Foundation.NSNotFound and cls.sanityCheck == False:
+        #    range = backtrace.rangeOfString_( "(in BackRow)" )
+        #    cls.sanityCheck = True
+        # if range.location != Foundation.NSNotFound:
+        #    clsName =  "RUIMoviesAppliance"
+        # return clsName
+
+        return "RUIMoviesAppliance"
 
     def getController(self):
         self.log("************ PyeTV Starting **********************************")
-
         Cleaner().start() # init clean up thread 
 
         # Optionally enable ObjC logging now
@@ -299,6 +321,3 @@ class RUIPythonAppliance( PyFR.Appliance.Appliance ):
         emc.StartEyeTV() # make sure EyeTV is started before we try to use it
         ret=emc.init()
         return ret
-
-
-
