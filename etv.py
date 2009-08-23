@@ -25,7 +25,7 @@ class ETVChannel(PyFR.Utilities.ControllerUtilities):
             # recording? channnel is busy & can't be changed
             app("EyeTV").player_windows.get()[0].show()
             pass
-        app("EyeTV").enter_full_screen()
+        ETV.EnterFullScreen()
 
     def GetProgramInfo(self):
         try:
@@ -218,33 +218,43 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         ret=app("EyeTV").full_screen_menu.get()
         return ret
 
+    def IsFullScreen(self):
+#        log("IsFullScreen called")
+        ret=app("EyeTV").full_screen.get()
+#        log("IsFullScreen done")
+        return ret
+        
     def EnterFullScreen(self):
         log("EnterFullScreen called")
-        app("EyeTV").enter_full_screen()
-        log("EnterFullScreen done")
+        # - It is a requirement to be in full screen mode before leaving this function
+        #   otherwise the ReturnToFrontRow in PyeTV.py make get executed before
+        #   EyeTV ever even gets in to full screen mode
+        count=0
+        while (self.IsFullScreen()==False):
+            app("EyeTV").enter_full_screen()
+            if not self.IsFullScreen():
+                count+=1
+                if count>40: # bail out after 10 seconds
+                    break
+                time.sleep(0.25) # give it time to happen
 
+        log("EnterFullScreen done")
+        
     def HideMenu(self):
         app("EyeTV").full_screen_menu.set(False)
         app("EyeTV").stop()  # pause/stop any playback
-        
-        
+                
     def ShowMenu(self):
         log("ShowMenu called")
         app("EyeTV").full_screen_menu.set(True)
-        app("EyeTV").enter_full_screen(True)
+        self.EnterFullScreen()
         log("ShowMenu done")
-
-    def IsFullScreen(self):
-        log("IsFullScreen called")
-        ret=app("EyeTV").full_screen_menu.get()
-        log("IsFullScreen done")
-        return ret
 
     def ShowGuide(self):
         log("ShowGuide called")
         self.HideWindows()
         app("EyeTV").play()
-        app("EyeTV").enter_full_screen(True)
+        self.EnterFullScreen()
         app("EyeTV").full_screen_menu.set(True)
         #time.sleep(0.25) # give it time to happen
         app("System Events").keystroke("g",using=k.command_down)
@@ -274,10 +284,19 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         app("EyeTV").play() # necessary if recording is paused
         if fromBeginning:
             self.JumpTo(0)
-        app("EyeTV").enter_full_screen()
-        # sometimes it doesn't play.  tell it again, just in case
-        app("EyeTV").play(rec.rec)
+        count=0
+        while self.IsPlaying()==False:
+            app("EyeTV").play(rec.rec)
+            if not self.IsPlaying():
+                count+=1
+                if count>40: # bail out after 10 seconds
+                    break
+                time.sleep(0.25) # give it time to happen
+
+        log("Recording is playing")    
+        self.EnterFullScreen()
         log("PlayRecording done")
+        return True
 
     def JumpTo(self,position):
         log("JumpTo called")

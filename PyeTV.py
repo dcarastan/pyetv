@@ -65,6 +65,20 @@ class Cleaner ( threading.Thread ):
 ################################################################################
 
 class ETVMenuController(PyFR.MenuController.MenuController):
+    inEyeTV=0   # On starting EyeTV, this flag is set
+
+    # ReturnToFrontRow
+    # - The etv class guarantees that EyeTV has entered full screen mode
+    #   on playing a recording, viewing the guide, etc, so all this needs to
+    #   do is check if EyeTV has left full screen mode which would be due to the
+    #   user hitting the menu remote button, or escape key on the keyboard
+    def ReturnToFrontRow(self):
+        if self.inEyeTV==1 and ETV.IsFullScreen()==False:
+            log("Exited EyeTV full screen mode, return to FrontRow");
+            self.inEyeTV=0
+            return True
+        return False
+    
     def AppRunning(self, appname):
         process = os.popen("ps xc | grep %s" % appname).read()
         if process:
@@ -181,7 +195,8 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         log("Got idx: %s rec %s" % (repr(idx), repr(rec).encode("ascii","replace")))
         if idx==0 or idx==1:
             fn=lambda : ETV.PlayRecording(rec,idx==1)
-            newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(fn,None)
+            self.inEyeTV = 1
+            newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(fn,self.ReturnToFrontRow)
             ret=controller.stack().pushController_(newCon)
             return ret
         if idx==2:
@@ -233,14 +248,16 @@ class ETVMenuController(PyFR.MenuController.MenuController):
 
     # WaitController startup callback
     def PlayChannel(self, controller, chan):
-        newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(chan.Play,None)
+        self.inEyeTV = 1
+        newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(chan.Play,self.ReturnToFrontRow)
         ret=controller.stack().pushController_(newCon)
         return ret
 
     # WaitController startup callback
     def StartETVGuide(self, controller, arg):
         log("in StartETVGuide")
-        newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,None)
+        self.inEyeTV = 1
+        newCon=PyeTVWaitController.alloc().initWithStartup_exitCond_(ETV.ShowGuide,self.ReturnToFrontRow)        
         ret=controller.stack().pushController_(newCon)
         return ret
 
