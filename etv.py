@@ -195,6 +195,24 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         log("GetChannels done")
         return retval
 
+
+    def GetFavoriteChannels(self):
+        log("GetFavoriteChannels called")
+        for i in range(1,10):  
+            try:
+                chan=app("EyeTV").current_favorites_list.get().channels.get()
+            except:
+                chan=[]
+            if len(chan)>0:
+                break
+            time.sleep(1)
+        retval=[]
+        for c in chan:
+            if c.enabled.get():
+                retval.append(ETVChannel(c))
+        log("GetFavoriteChannels done")
+        return retval
+
     def IsPlaying(self):
         log("IsPlaying called")
         try:
