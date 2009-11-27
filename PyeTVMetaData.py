@@ -61,10 +61,6 @@ class PyeTVMetadataPopulator(NSObject):
     """
     The populator class to be returned by PyeTVMetadataPopulatorFactor
     """
-    def init(self):
-        NSObject.init(self);
-        return self
-
     def populateChannelData(self, layer, asset):
         log("in populateChannelData")
 
@@ -153,14 +149,12 @@ class PyeTVMetadataPopulatorFactory(BRSingleton):
 
     def init(self):
         log("initing Populator factory")
+        self=super(PyeTVMetadataPopulatorFactory,self).init()
+        if self is None:
+            return None
         __Instance=self
         self.pop=PyeTVMetadataPopulator.alloc().init()
-        return BRSingleton.init(self)
-
-    def dealloc(self):
-        log("Deallocing populator factory")
-        #self.pop.release()
-        super(BRSingleton,self).dealloc()
+        return self
 
     # Note: this isn't really a good singleton implementation, but it's good enough for our purposes here
     @classmethod
@@ -181,7 +175,9 @@ class PyeTVPreviewMetadataController(BRMetadataPreviewController):
 
     def initWithRecording_(self, rec):
         log("metadataController::initWithRecording_ %s" % repr(self))
-        BRMetadataPreviewController.init(self)
+        self=super(PyeTVPreviewMetadataController,self).init()
+        if self is None:
+            return None
         asset=PyeTVMediaAsset.alloc().initWithRecording_(rec)
         self.setAsset_(asset)
         self.setShowsMetadataImmediately_(True) # could comment this out for a bigger look at the screenshot, but the md is more important
@@ -189,7 +185,9 @@ class PyeTVPreviewMetadataController(BRMetadataPreviewController):
 
     def initWithSeriesEpisode_(self, rec):
         log("metadataController::initWithSeriesEpisode_ %s" % repr(self))
-        BRMetadataPreviewController.init(self)
+        self=super(PyeTVPreviewMetadataController,self).init()
+        if self is None:
+            return None
         asset=PyeTVMediaAsset.alloc().initWithSeriesEpisode_(rec)
         self.setAsset_(asset)
         #self.setShowsMetadataImmediately_(True) 
@@ -197,7 +195,9 @@ class PyeTVPreviewMetadataController(BRMetadataPreviewController):
 
     def initWithChannel_(self, channel):
         log("metadataController::initWithChannel_: %s" % repr(self))
-        BRMetadataPreviewController.init(self)
+        self=super(PyeTVPreviewMetadataController,self).init()
+        if self is None:
+            return None
         asset=PyeTVMediaAsset.alloc().initWithChannel_(channel)
         self.setAsset_(asset)
         self.setShowsMetadataImmediately_(True) 
@@ -220,6 +220,6 @@ class PyeTVPreviewMetadataController(BRMetadataPreviewController):
         if self.asset() is not None:
             log("releasing asset %s" % repr(self.asset()))
             #self.asset().release()
-        super(BRMetadataPreviewController,self).dealloc()
+        super(PyeTVPreviewMetadataController,self).dealloc()
 
 
