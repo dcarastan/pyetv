@@ -134,6 +134,8 @@ class ETVMenuController(PyFR.MenuController.MenuController):
     def MakeChannelsMenu(self):
         chan=ETV.GetChannels()
         root=PyFR.MenuController.Menu("All Channels",[])
+        if not chan:
+            return root
         for c in chan:
             chstr=c.GetName()
             item=PyFR.MenuController.MenuItem(chstr, self.PlayChannel, c, self.GetChannelMetadata, False)
@@ -143,6 +145,8 @@ class ETVMenuController(PyFR.MenuController.MenuController):
     def MakeFavoriteChannelsMenu(self):
         chan=ETV.GetFavoriteChannels()
         root=PyFR.MenuController.Menu("Favorite Channels",[])
+        if not chan:
+            return root
         for c in chan:
             chstr=c.GetName()
             item=PyFR.MenuController.MenuItem(chstr, self.PlayChannel, c, self.GetChannelMetadata, False)
@@ -298,7 +302,6 @@ class ETVMenuController(PyFR.MenuController.MenuController):
 
         # chain to parent's ctor
         ac=PyFR.MenuController.MenuController.initWithMenu_(self,self.MainMenu)
-
         log("Done initing menus")
         return ac
 
