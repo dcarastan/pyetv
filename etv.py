@@ -35,8 +35,12 @@ class ETVChannel(PyFR.Utilities.ControllerUtilities):
             return False,app("EyeTV").player_windows.get()[0].program_info.get()
         except:
             # recording? channnel is busy & can't be changed
-            info=app("EyeTV").player_windows.get()[0].program_info.get()
-            return True, info
+            try:
+                info=app("EyeTV").player_windows.get()[0].program_info.get()
+                return True, info
+            except:
+                # index [0] could be out of range if no tuner
+                return False, {}
 
     def GetPreviewImagePath(self):
         return "/Applications/EyeTV.app/Contents/Resources/eyetv.icns"
