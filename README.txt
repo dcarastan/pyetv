@@ -1,5 +1,22 @@
 CHANGES:
 
+Version 2.0:
+
+   This version adds Snow Leopard support (a different binary is necessary
+   for SL vs Leopard).
+
+   Also added is a separate "Favorite channels" menu which picks up the
+   first favorite channels "playlist" from EyeTV.
+
+   Fix a bug which would cause PyeTV to hang when deleting the
+   just-played recording has been fixed.
+
+Version 1.3:
+ 
+   Removing some timing delays.  Avoid conflict with other
+   frontpython-based plugins.  Fix off-by-one bug counting recordings.
+   Better detection and handling of full screen
+
 Version 1.2:
 
    The channels list now has program info as metadata, if it's available
@@ -55,14 +72,6 @@ DEVELOPERS:
      pick up any changes you've made to PyeTV.
 
 
-OUTSTANDING ISSUES:
-
-     EyeTV must be running before Front Row is started.
-
-     We have to expose the desktop (hide Front Row) *before* we can
-     tell EyeTV to go full screen, so the transition between FR and
-     EyeTV is somewhat ugly.
-
 LICENSE:
 	These files are placed under the BSD license.
 
@@ -75,7 +84,6 @@ ACKNOWLEDGEMENTS:
 
         Special thanks to garionPHX of that project for all his
         assistance.
-
 
 	FrontPython, in turn, made use of techniques developed by the
 	fine folks at the Sapphire project: http://appletv.nanopi.net/.
