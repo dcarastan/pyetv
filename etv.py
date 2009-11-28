@@ -158,6 +158,14 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
 
 
 class EyeTV(PyFR.Utilities.ControllerUtilities):
+    def __init__(self):
+        self.deletion_list=[]
+
+    def SweepDeleted(self):
+        log("SweepDeleted")
+        for r in self.deletion_list:
+            app("EyeTV").delete(r)
+
     def GetRecordings(self):
         log("GetRecordings called")
         for i in range(1,10):  
@@ -167,14 +175,15 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
             time.sleep(1)
         retval=[]
         for r in recs:
-            retval.append(ETVRecording(r))
+            if r not in self.deletion_list:
+                retval.append(ETVRecording(r))
         log("GetRecordings done")
         return retval
 
     def GetRecordingsDict(self):
         log("in getrecordingsdict")
         series_dict={}
-        rec=ETV.GetRecordings()
+        rec=self.GetRecordings()
         log("Got %d recordings" % len(rec))
         for r in rec:
             title=r.GetTitle()
@@ -202,14 +211,11 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
 
     def GetFavoriteChannels(self):
         log("GetFavoriteChannels called")
-        for i in range(1,10):  
-            try:
-                chan=app("EyeTV").current_favorites_list.get().channels.get()
-            except:
-                chan=[]
-            if len(chan)>0:
-                break
-            time.sleep(1)
+        chan=[]
+        try:
+            chan=app("EyeTV").current_favorites_list.get().channels.get()
+        except:
+            return []
         retval=[]
         for c in chan:
             if c.enabled.get():
@@ -298,7 +304,7 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
     def DeleteRecording(self,rec):
         app("EyeTV").stop()
         app("EyeTV").player_windows.close()
-        app("EyeTV").delete(rec.rec)
+        self.deletion_list.append(rec.rec)
 
     def PlayRecording(self,rec,fromBeginning):
         log("PlayRecording called to play recording %s%s" % (rec.GetTitle(), rec.GetEpisodeAndDate()))
@@ -318,6 +324,9 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         log("Recording is playing")    
         self.EnterFullScreen()
         log("PlayRecording done")
+
+        log("Taking opportunity to sweep deleted recordings")
+        self.SweepDeleted()
         return True
 
     def JumpTo(self,position):

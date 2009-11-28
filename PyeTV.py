@@ -59,6 +59,7 @@ class Cleaner ( threading.Thread ):
             if CleanerShouldHideWindow and not fr.uiVisible():
                 # by user requests; let's hide all EyeTV windows before we leave the appliance
                 ETV.HideWindows()
+                ETV.SweepDeleted()
                 CleanerShouldHideWindow=False
 
 
