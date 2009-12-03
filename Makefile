@@ -1,6 +1,7 @@
 NAME=PyeTV
-VERSION=2.0SL
+VERSION=2.0.1-SnowLeopard
 IMGNAME=${NAME}-${VERSION}
+
 
 kill:
 #	python setup.py py2app -A

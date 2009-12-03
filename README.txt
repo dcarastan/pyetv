@@ -1,5 +1,9 @@
 CHANGES:
 
+
+Version 2.0.1:
+   Include missing installer on Snow Leopard.
+
 Version 2.0:
 
    This version adds Snow Leopard support (a different binary is necessary
