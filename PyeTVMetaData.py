@@ -72,6 +72,8 @@ class PyeTVMetadataPopulator(NSObject):
 
         recording,data=asset.channel.GetProgramInfo()
         log("%s, %s" % (str(recording).encode("ascii","replace"),str(data).encode("ascii","replace")))
+        if not data:
+            return
         if not recording and not data.has_key('currentShow'):
             return
         if recording:
