@@ -7,7 +7,9 @@ import time
 import PyFR.Utilities
 
 
-from Logger import *
+def log(s):
+    #Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
+    pass
 
 class ETVChannel(PyFR.Utilities.ControllerUtilities):
     def __init__(self,chan):
