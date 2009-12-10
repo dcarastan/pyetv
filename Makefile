@@ -29,7 +29,7 @@ tar:
 doc:
 	cp README.txt dist
 
-installers: real
+installers: real doc
 	osacompile -o dist/Install\ PyeTV.app Install.applescript
 	osacompile -o dist/UnInstall\ PyeTV.app UnInstall.applescript
 
