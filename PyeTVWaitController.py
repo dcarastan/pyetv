@@ -12,23 +12,18 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
     """
     A Front Row controller which 
 
-     1) launches an external app (EyeTV, in this case), 
-
-     2) after a certain period of time has elapsed a startup function (if
-         defined) is called.  This function can perform a task in the external app
-         (e.g. show the program guide).
+     1) launches an external app (EyeTV, in this case), and calls any startup code
 
      2) hides FrontRow and 
 
      3) waits until the specified exit conditon is met (if any) before returning to Front Row
 
-     This class also makes sure the EyeTV screenshot is up to date when returning to Front Row
-       
     """
 
     def initWithStartup_exitCond_(self, startup=None,exitCond=None):
         log("initWithStartup_")
-        self.tickCount=0
+        #self.tickCount=0
+        self.wasHidden=False
         self.startup=startup
         self.exitCond=exitCond
         self.frcontroller = BRAppManager.sharedApplication().delegate()
@@ -36,7 +31,8 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
 
     def PyFR_start(self):
         log("PyFR_start called_")
-        self.tickCount = 0
+        #self.tickCount = 0
+        self.wasHidden = False
         if self.startup is not None:
             self.call_startup = True
         else:
@@ -45,54 +41,53 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
         self.textController.setTitle_("") # don't show "Launching EyeTV" when we come back
 
     def AppShouldExit(self):
-        self.tickCount = self.tickCount+1
-
-        # tune these parameters
-        wait_before_calling_startup = 1
-        wait_before_exit_ticks=20
-
-        # possibly call startup code
-        if self.call_startup and self.tickCount >= wait_before_calling_startup:
-            try:
-                self.startup()
-                self.call_startup = False
-            except:
-                log("App::startup failed with tickCount=%d" % self.tickCount)
-                pass
-
-        # give EyeTV a chance to stabilize, and then disable FrontRow's annoying auto-exit feature
-        # so that we can get back here no matter how long the recording is!
-        if self.tickCount == wait_before_exit_ticks: 
+        if not self.frcontroller.uiVisible():
+            self.wasHidden = True
+            self.doStartup()
             AutoQuitManager = objc.lookUpClass("FRAutoQuitManager")
             AutoQuitManager.sharedManager()._stopAutoQuitTimer()
             AutoQuitManager.sharedManager().setAutoQuitEnabled_(False)
 
-        # if not stabilized, we don't exit EyeTV
-        if self.tickCount < wait_before_exit_ticks:
-            return False
-
-        # if we become visible after stabilization, then we've exited EyeTV and we need to pop
-        if self.frcontroller.uiVisible():
+        # if we become visible after we've been hidden, then we've exited EyeTV and we need to pop
+        if self.wasHidden and self.frcontroller.uiVisible():
             log("FR ui is visible, so hiding windows")
-            #ETV.HideWindows()
+            self.doShutdown()
             return True
 
         if self.exitCond is not None and self.exitCond():
-            #ETV.HideWindows()
+            self.doShutdown()
             return True
 
         return False
 
+    def doStartup(self):
+        if self.call_startup:
+            try:
+                log("calling PyeTVWaitController.startup()")
+                self.startup()
+                self.call_startup = False
+            except:
+                log("PyeTVWaitController.startup() failed")
+                pass
+
+    def doShutdown(self):
+        #ETV.HideWindows()
+        #ETV.UpdateScreenShot()
+        ETV.Stop()
+        #ETV.SweepDeleted()
+        pass
+
     def AboutToHideFR(self):
+        #self.doStartup()
         pass
 
     def FRWasShown(self):
         log("**************** FRWasShown *****************");
         try:
             # sometimes this doesn't work!
+            self.doShutdown()
             self.stack().popController()
         except:
             pass
-        #ETV.HideWindows()
 
 
