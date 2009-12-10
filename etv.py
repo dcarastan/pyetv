@@ -274,6 +274,10 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         app("EyeTV").full_screen_menu.set(False)
         app("EyeTV").stop()  # pause/stop any playback
                 
+
+    def Stop(self):
+        app("EyeTV").stop()
+
     def ShowMenu(self):
         log("ShowMenu called")
         app("EyeTV").full_screen_menu.set(True)
@@ -306,7 +310,9 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
     def DeleteRecording(self,rec):
         app("EyeTV").stop()
         app("EyeTV").player_windows.close()
-        self.deletion_list.append(rec.rec)
+        #self.deletion_list.append(rec.rec)
+        app("EyeTV").delete(rec.rec)
+
 
     def PlayRecording(self,rec,fromBeginning):
         log("PlayRecording called to play recording %s%s" % (rec.GetTitle(), rec.GetEpisodeAndDate()))
@@ -345,6 +351,7 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
             return None
         return app("EyeTV").current_channel.get()
 
+
     # this was only used to update the screenshot of the current recording
     # while the window was still open.  it's no longer really used b/c we
     # the screenshot is automatically updated in the .eyetvr file when the
@@ -356,6 +363,8 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
             pass
         except:
             pass
+
+
 
 ETV=EyeTV()
 
