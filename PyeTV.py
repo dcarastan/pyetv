@@ -12,13 +12,20 @@ import PyFR.MenuController
 import PyFR.Utilities
 import PyFR.Debugging
 import PyFR.OptionDialog
+import Foundation
 
 # PyeTV imports
 from PyeTVMetaData import *
 from PyeTVWaitController import *
 from etv import ETV
 
-from Logger import *
+
+verbose=0
+
+def log(s,level=1):
+    if verbose >= level:
+        Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
+    pass
 
 import sys
 
@@ -95,7 +102,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         return ret
 
     def GetSeriesMetadata(self, controller, series):
-        #log(u"requested preview for series %s" % (series))
+        log(u"requested preview for series %s" % (series))
         if series not in self.series_dict.keys():
             return None
         ret=PyeTVPreviewMetadataController.alloc().initWithSeriesEpisode_(self.series_dict[series][0])
@@ -303,7 +310,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
 
         # chain to parent's ctor
         ac=PyFR.MenuController.MenuController.initWithMenu_(self,self.MainMenu)
-        log("Done initing menus")
+        log("Done initing menus",2)
         return ac
 
     def willBePushed(self):

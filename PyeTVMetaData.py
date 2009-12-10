@@ -6,8 +6,13 @@ import objc
 import string
 from PyFR.BackRow import *
 from etv import ETV
+import Foundation
 
-from Logger import *
+verbose=0
+def log(s,level=1):
+    if verbose >= level:
+        Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
+    pass
 
 class PyeTVMediaAsset(BRSimpleMediaAsset):
     """
@@ -115,7 +120,7 @@ class PyeTVMetadataPopulator(NSObject):
         layer.setMetadata_withLabels_(data,labels)
 
     def populateLayer_fromAsset_(self, layer, asset):
-        log("We want to do magic stuff here for layer %s and asset %s" % (repr(layer), repr(asset)))
+        #log("We want to do magic stuff here for layer %s and asset %s" % (repr(layer), repr(asset)))
         if asset.IsSeries:
             return
         if asset.IsChannel:
@@ -150,7 +155,7 @@ class PyeTVMetadataPopulatorFactory(BRSingleton):
     __Instance = None
 
     def init(self):
-        log("initing Populator factory")
+        log("initing Populator factory",0)
         self=super(PyeTVMetadataPopulatorFactory,self).init()
         if self is None:
             return None
@@ -161,7 +166,7 @@ class PyeTVMetadataPopulatorFactory(BRSingleton):
     # Note: this isn't really a good singleton implementation, but it's good enough for our purposes here
     @classmethod
     def singleton(self):
-        log("returning populator singleton")
+        log("returning populator singleton",0)
         return self.__Instance
 
     def populatorForAsset_(self, asset):

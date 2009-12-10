@@ -7,8 +7,12 @@ import time
 import PyFR.Utilities
 
 
-def log(s):
-    #Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
+CURRENT_RECORDING=None
+verbose=0
+
+def log(s,level=1):
+    if verbose >= level:
+        Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
     pass
 
 class ETVChannel(PyFR.Utilities.ControllerUtilities):
@@ -19,7 +23,9 @@ class ETVChannel(PyFR.Utilities.ControllerUtilities):
         return str(self.chan.channel_number.get()) + " - " + self.chan.name.get()
 
     def Play(self):
-        log("Trying2 to play channel number %d" % self.chan.channel_number.get())
+        global CURRENT_RECORDING
+        CURRENT_RECORDING=None
+        log("Trying to play channel number %d" % self.chan.channel_number.get(),0)
         ETV.HideWindows()
         try:
             app("EyeTV").channel_change(channel_number = self.chan.channel_number.get())
@@ -71,13 +77,21 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
     def GetPreviewImagePath(self):
         imgpath=""
         try:
-            loc=self.rec.location.get()
-            f=loc.file.path
-            f=f[:-6]+"tiff"
-            if len(f)>0:
-                imgpath=f
+            log("Get preview image path " + repr(self) + " " + repr(CURRENT_RECORDING))
+            if self == CURRENT_RECORDING:
+                fname=":tmp:screenshot.jpg"
+                app("EyeTV").screenshot.set(fname)
+                log("returning /tmp/screenshot.jpg")
+                return "/tmp/screenshot.jpg"
+            else:
+                loc=self.rec.location.get()
+                f=loc.file.path
+                f=f[:-6]+"tiff"
+                if len(f)>0:
+                    imgpath=f
         except:
             pass
+        log("returning " + imgpath.encode('ascii','replace'))
         return imgpath
 
     def GetStartTime(self):
@@ -100,11 +114,11 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
             return ""
 
     def ToStr(self,sec):
-        log("ToStr called")
+        log("ToStr called",2)
         shour = int(sec)/3600 # integer division
         smin = (sec - shour*3600)/60
         ret = "%d:%02d" % (shour, smin)
-        log("ToStr done")
+        log("ToStr done",2)
         return ret
 
     def GetPlaybackPosition(self, asString=False):
@@ -315,7 +329,9 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
 
 
     def PlayRecording(self,rec,fromBeginning):
-        log("PlayRecording called to play recording %s%s" % (rec.GetTitle(), rec.GetEpisodeAndDate()))
+        global CURRENT_RECORDING
+        CURRENT_RECORDING=rec
+        log("PlayRecording called to play recording %s%s" % (rec.GetTitle(), rec.GetEpisodeAndDate()),0)
         app("EyeTV").play(rec.rec)
         app("EyeTV").play() # necessary if recording is paused
         if fromBeginning:
