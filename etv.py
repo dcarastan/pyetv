@@ -12,7 +12,7 @@ verbose=0
 
 def log(s,level=1):
     if verbose >= level:
-        Foundation.NSLog( "%s: %s" % ("PyeTV", str(s) ) )
+        Foundation.NSLog( "%s: %@", "PyeTV", str(s))
     pass
 
 class ETVChannel(PyFR.Utilities.ControllerUtilities):
