@@ -8,6 +8,9 @@ from PyFR.BackRow import *
 from etv import ETV
 import Foundation
 
+from translate import tr
+
+
 verbose=0
 def log(s,level=1):
     if verbose >= level:
@@ -86,8 +89,8 @@ class PyeTVMetadataPopulator(NSObject):
             log("Got recording, channel name %s" % c)
             if c is None:
                 return
-            currentTitle="Now Recording!"
-            currentDesc=("Currently recording channel %s.  Program info is not available. " % c)
+            currentTitle=tr("Now Recording!")
+            currentDesc=(tr("Currently recording channel %s.  Program info is not available.") % c)
 
         try:
             currentShow=data['currentShow']
@@ -108,9 +111,9 @@ class PyeTVMetadataPopulator(NSObject):
         layer.setTitle_(currentTitle)
         layer.setSummary_(currentDesc)
         labels=[
-            "Next",
-            "Episode",
-            "At"
+            tr("Next"),
+            tr("Episode"),
+            tr("At")
             ]
         data=[
             nextTitle,
@@ -129,15 +132,15 @@ class PyeTVMetadataPopulator(NSObject):
         layer.setTitle_(asset.rec.GetTitle())
         layer.setSummary_(asset.rec.GetDescription())
         labels=[
-            "Episode",
-            "Channel",
-            "Position",
-            "Recorded at"
+            tr("Episode"),
+            tr("Channel"),
+            tr("Position"),
+            tr("Recorded at")
             ]
         data=[
             asset.rec.GetEpisode(),
             asset.rec.GetChannelStr(),
-            asset.rec.GetPlaybackPosition(True) + " of " +asset.rec.GetDuration(True),
+            asset.rec.GetPlaybackPosition(True) + " / " +asset.rec.GetDuration(True),
             asset.rec.GetStartTime()
             ]
         layer.setMetadata_withLabels_(data,labels)

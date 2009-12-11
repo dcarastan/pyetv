@@ -8,6 +8,8 @@ from PyFR.BackRow import *
 from etv import ETV
 from Logger import *
 
+from translate import tr
+
 class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.ControllerUtilities):
     """
     A Front Row controller which 
@@ -27,7 +29,7 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
         self.startup=startup
         self.exitCond=exitCond
         self.frcontroller = BRAppManager.sharedApplication().delegate()
-        return PyFR.WaitController.WaitController.initWithText_(self, "Launching EyeTV")
+        return PyFR.WaitController.WaitController.initWithText_(self, tr("Launching EyeTV"))
 
     def PyFR_start(self):
         log("PyFR_start called_")

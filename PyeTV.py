@@ -19,6 +19,8 @@ from PyeTVMetaData import *
 from PyeTVWaitController import *
 from etv import ETV
 
+from translate import tr
+
 
 verbose=0
 
@@ -27,10 +29,8 @@ def log(s,level=1):
         Foundation.NSLog( "%s: %@", "PyeTV", str(s) )
     pass
 
-import sys
 
-SERIES_LABEL="Recordings by series"
-ALL_RECORDINGS_LABEL="All recordings"
+SERIES_LABEL=tr("Recordings by Series")
 
 class RecordingsMenu(PyFR.MenuController.Menu):
     def GetRightText(self):
@@ -129,19 +129,18 @@ class ETVMenuController(PyFR.MenuController.MenuController):
                 series_episodes[ep.GetDate()]=ep
             date_keys=series_episodes.keys();
             date_keys.sort()
-
             for epdate in date_keys:
                 ep=series_episodes[epdate]
                 epstr=ep.GetEpisodeAndDate()
                 item=PyFR.MenuController.MenuItem(epstr, self.RecordingOptionsMenu, ep, self.GetRecordingMetadata, True)
                 submenu.AddItem(item)
-            item=PyFR.MenuController.MenuItem("Delete all",self.ConfirmDeleteRecordingDialog, series[s], None, True)
+            item=PyFR.MenuController.MenuItem(tr("Delete All"),self.ConfirmDeleteRecordingDialog, series[s], None, True)
             submenu.AddItem(item)
         return root
 
     def MakeChannelsMenu(self):
         chan=ETV.GetChannels()
-        root=PyFR.MenuController.Menu("All Channels",[])
+        root=PyFR.MenuController.Menu(tr("All Channels"),[])
         if not chan:
             return root
         for c in chan:
@@ -152,7 +151,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
 
     def MakeFavoriteChannelsMenu(self):
         chan=ETV.GetFavoriteChannels()
-        root=PyFR.MenuController.Menu("Favorite Channels",[])
+        root=PyFR.MenuController.Menu(tr("Favorite Channels"),[])
         if not chan:
             return root
         for c in chan:
@@ -163,15 +162,15 @@ class ETVMenuController(PyFR.MenuController.MenuController):
 
     def ConfirmDeleteRecordingDialog(self, controller, rec):
         log("in confirm delete recordings dialog")
-        options=[ PyFR.OptionDialog.OptionItem("Yes",rec), 
-                  PyFR.OptionDialog.OptionItem("No",rec) ]
+        options=[ PyFR.OptionDialog.OptionItem(tr("Yes"),rec), 
+                  PyFR.OptionDialog.OptionItem(tr("No"),rec) ]
         if isinstance(rec,list):
-            title="Are you sure you want to delete %d recordings from %s?" % (len(rec),rec[0].GetTitle())
-            dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Delete recording(s):", options, self.ConfirmDeleteRecordingDialogHandler)
+            title=tr("Are you sure you want to delete %d recordings from %s?") % (len(rec),rec[0].GetTitle())
+            dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_(tr("Delete Recording(s):"), options, self.ConfirmDeleteRecordingDialogHandler)
             dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
         else:
-            title="Are you sure you want to delete '" + rec.GetTitle()+ ": " + rec.GetEpisode() + " " + rec.GetStartTime() + "' ?"
-            dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_("Delete recording(s):", options, self.ConfirmDeleteRecordingDialogHandler)
+            title=tr("Are you sure you want to delete") + "'" + rec.GetTitle()+ ": " + rec.GetEpisode() + " " + rec.GetStartTime() + "' ?"
+            dlg=PyFR.OptionDialog.OptionDialog.alloc().initWithTitle_Items_Handler_(tr("Delete Recording(s):"), options, self.ConfirmDeleteRecordingDialogHandler)
             dlg.setPrimaryInfoText_withAttributes_(title,BRThemeInfo.sharedTheme().promptTextAttributes())
         ret=controller.stack().pushController_(dlg)
         return ret
@@ -225,10 +224,10 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         if idx==3:
             if self.AppRunning("ComSkipper"):
                 os.system("/usr/bin/killall ComSkipper &")
-                self.CurrentOptionsMenu.ds.menu.items[3].layer.setTitle_("ComSkipper                     [Off]") # deep magic
+                self.CurrentOptionsMenu.ds.menu.items[3].layer.setTitle_(tr("ComSkipper                     [Off]")) # deep magic
             else:
                 os.system("/Library/Application\ Support/ETVComskip/ComSkipper.app/Contents/MacOS/ComSkipper &")
-                self.CurrentOptionsMenu.ds.menu.items[3].layer.setTitle_("ComSkipper                      [On]") # deep magic
+                self.CurrentOptionsMenu.ds.menu.items[3].layer.setTitle_(tr("ComSkipper                      [On]")) # deep magic
             #time.sleep(0.5)
 
         if idx==4:
@@ -240,20 +239,20 @@ class ETVMenuController(PyFR.MenuController.MenuController):
 
     def GetRecordingOptionsMenu(self, rec):
         items= [
-            PyFR.MenuController.MenuItem("Play",   self.RecordingOptionsMenuHandler, (rec, 0), self.GetRecordingMetadataFromTuple),
-            PyFR.MenuController.MenuItem("Restart", self.RecordingOptionsMenuHandler, (rec, 1), self.GetRecordingMetadataFromTuple),
-            PyFR.MenuController.MenuItem("Delete",   self.RecordingOptionsMenuHandler, (rec, 2), self.GetRecordingMetadataFromTuple)
+            PyFR.MenuController.MenuItem(tr("Play"),   self.RecordingOptionsMenuHandler, (rec, 0), self.GetRecordingMetadataFromTuple),
+            PyFR.MenuController.MenuItem(tr("Restart"), self.RecordingOptionsMenuHandler, (rec, 1), self.GetRecordingMetadataFromTuple),
+            PyFR.MenuController.MenuItem(tr("Delete"),   self.RecordingOptionsMenuHandler, (rec, 2), self.GetRecordingMetadataFromTuple)
             ]
         
         if self.HasETVComskip:
-            comskip_state="ComSkipper                      [Off]"
+            comskip_state=tr("ComSkipper                      [Off]")
             if self.AppRunning("ComSkipper"):
-                comskip_state="ComSkipper                      [On]"
+                comskip_state=tr("ComSkipper                      [On]")
             items.append(PyFR.MenuController.MenuItem(comskip_state,   self.RecordingOptionsMenuHandler, (rec, 3), self.GetRecordingMetadataFromTuple))
             if rec.GetMarkerCount()==0:
                 mc_state="Mark Commercials"
                 if self.AppRunning("MarkCommercials"):
-                    mc_state="Mark Commercials    [Running]"
+                    mc_state=tr("Mark Commercials    [Running]")
                 items.append(PyFR.MenuController.MenuItem(mc_state, self.RecordingOptionsMenuHandler, (rec, 4), self.GetRecordingMetadataFromTuple))
 
         menu=PyFR.MenuController.Menu(rec.GetTitle(), items)
@@ -305,7 +304,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
                 self.series_menu,
                 self.MakeFavoriteChannelsMenu(),
                 self.MakeChannelsMenu(),
-                PyFR.MenuController.MenuItem("Program guide", self.StartETVGuide),
+                PyFR.MenuController.MenuItem(tr("Program Guide"), self.StartETVGuide),
                 ])
 
         # chain to parent's ctor
