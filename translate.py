@@ -2,81 +2,81 @@ import Foundation
 # -*- coding: utf-8 -*-
 
 languageCode=Foundation.NSUserDefaults.standardUserDefaults().objectForKey_('AppleLanguages')[0]
-#languageCode='nl'
+#languageCode='es'
 
 translations={
     'da': # Danish
-    {'Yes' : 'Ja',
-     'No' : 'Nej',
+    {'Yes' : u'Ja',
+     'No' : u'Nej',
 
-     'Recordings by Series' : 'Optagelser efter serier',
-     'Favorite Channels' : 'Favoritkanaler',
-     'All Channels' : 'Alle kanaler',
-     'Program Guide' : 'Programguide',
+     'Recordings by Series' : u'Optagelser efter serier',
+     'Favorite Channels' : u'Favoritkanaler',
+     'All Channels' : u'Alle kanaler',
+     'Program Guide' : u'Programguide',
      
-     'Delete All' : 'Slet alle',
-     'Play' : 'Play',
-     'Restart' : 'Genstart',
-     'Delete' : 'Slet',
+     'Delete All' : u'Slet alle',
+     'Play' : u'Play',
+     'Restart' : u'Genstart',
+     'Delete' : u'Slet',
      
-     'Delete Recording(s)' : 'Slet optagelse(r):',
+     'Delete Recording(s)' : u'Slet optagelse(r):',
      
-     'Are you sure you want to delete %d recordings from %s?' : 'Er du sikker på at du vil slette %d optagelse(r) fra %s?',
-     'Are you sure you want to delete' : 'Er du sikker på at du vil slette', # Shouldn't this end in a question mark?
+     'Are you sure you want to delete %d recordings from %s?' : u'Er du sikker på at du vil slette %d optagelse(r) fra %s?',
+     'Are you sure you want to delete' : u'Er du sikker på at du vil slette', # Shouldn't this end in a question mark?
      
-     'ComSkipper  [Off]' : 'ComSkipper  [Deaktivér]',
-     'ComSkipper  [On]' : 'ComSkipper  [Aktivér]',
-     #'Mark Commercials' : 'Markér reklamer',
-     #"Mark Commercials [Running]" : "Markér reklamer [løbende]", # Some context of "Running" is probably needed; the translation might not be right!
+     'ComSkipper  [Off]' : u'ComSkipper  [Deaktivér]',
+     'ComSkipper  [On]' : u'ComSkipper  [Aktivér]',
+     #'Mark Commercials' : u'Markér reklamer',
+     #"Mark Commercials [Running]" : u"Markér reklamer [løbende]", # Some context of "Running" is probably needed; the translation might not be right!
      
      
-     'Launching EyeTV' : 'Starter EyeTV',
-     'Now Recording' : 'Optager',
-     "Currently recording channel %s. Program info is not available." : "Optager fra kanal %s. Programinformation ikke tilgængelig.",
+     'Launching EyeTV' : u'Starter EyeTV',
+     'Now Recording' : u'Optager',
+     "Currently recording channel %s. Program info is not available." : u"Optager fra kanal %s. Programinformation ikke tilgængelig.",
      
-     'Episode' : 'Episode',
-     'Channel' : 'Kanal',
-     'Position' : 'Position',
-     'Recorded at' : 'Optaget', #What will follow? Timestamp?
-     "Next" : "Næste",
-     "Time" : "Tid"
+     'Episode' : u'Episode',
+     'Channel' : u'Kanal',
+     'Position' : u'Position',
+     'Recorded at' : u'Optaget', #What will follow? Timestamp?
+     "Next" : u"Næste",
+     "Time" : u"Tid"
      },
 
     'es':  # Spanish
-    {'Yes' : 'Sí',
-     'No' : 'No',
+    {'Yes' : u'Sí',
+     'No' : u'No',
 
-     'Recordings by Series' : 'Grabaciones',
-     'Favorite Channels' : 'Canales Favoritos',
-     'All Channels' : 'Todos los Canales',
-     'Program Guide' : 'Programación',
+     'Recordings by Series' : u'Grabaciones',
+     'Favorite Channels' : u'Canales Favoritos',
+     'All Channels' : u'Todos los Canales',
+     'Program Guide' : u'Programación',
      
-     'Delete All' : 'Eliminar Todo',
-     'Play' : 'Reproducir',
-     'Restart' : 'Reiniciar',
-     'Delete' : 'Eliminar',
+     'Delete All' : u'Eliminar Todo',
+     'Play' : u'Reproducir',
+     'Restart' : u'Reiniciar',
+     'Delete' : u'Eliminar',
      
-     'Delete Recording(s)' : 'Eliminar Grabación(es):',
+     'Delete Recording(s)' : u'Eliminar Grabación(es):',
      
-     'Are you sure you want to delete %d recordings from %s?' : 'Seguro que quieres eliminar %d grabaciones de %s?',
-     'Are you sure you want to delete' : 'Seguro que quieres eliminar?',
+     'Are you sure you want to delete %d recordings from %s?' : u'Seguro que quieres eliminar %d grabaciones de %s?',
+     'Are you sure you want to delete' : u'Seguro que quieres eliminar?',
      
-     'ComSkipper  [Off]' : 'ComSkipper  [Desactivado]',
-     'ComSkipper  [On]' : 'ComSkipper  [Activado]',
-     #'Mark Commercials' : 'Señalar anuncios',
-     #"Mark Commercials [Running]" : "Señalar anuncios [Funcionando]",
+     'ComSkipper  [Off]' : u'ComSkipper  [Desactivado]',
+     'ComSkipper  [On]' : u'ComSkipper  [Activado]',
+     #'Mark Commercials' : u'Señalar anuncios',
+     #"Mark Commercials [Running]" : u"Señalar anuncios [Funcionando]",
      
      
-     'Launching EyeTV' : 'Abriendo EyeTV',
-     'Now Recording' : 'Grabando...',
-     "Currently recording channel %s. Program info is not available." : "Grabación en curso de %s. Información del programa no disponible.",
+     'Launching EyeTV' : u'Abriendo EyeTV',
+     'Now Recording' : u'Grabando...',
+     "Currently recording channel %s. Program info is not available." : u"Grabación en curso de %s. Información del programa no disponible.",
      
-     'Episode' : 'Episodio',
-     'Channel' : 'Canal',
-     'Position' : 'Posición',
-     'Recorded at' : 'Grabado a las',
-     "Next" : "Siguiente",
-     "Time" : "Fecha"
+     'Episode' : u'Episodio',
+     'Channel' : u'Canal',
+     'Position' : u'Posición',
+     'Recorded at' : u'Grabado a las',
+     "Next" : u"Siguiente",
+     "Time" : u"Fecha"
      },
 
     'fi':  # Finnish

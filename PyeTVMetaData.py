@@ -14,7 +14,7 @@ from translate import tr
 verbose=0
 def log(s,level=1):
     if verbose >= level:
-        Foundation.NSLog( "%s: %@", "PyeTV", str(s) ) 
+        Foundation.NSLog( u"%s: %@", "PyeTV", s ) 
     pass
 
 class PyeTVMediaAsset(BRSimpleMediaAsset):

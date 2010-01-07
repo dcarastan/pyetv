@@ -2,6 +2,6 @@
 
 import Foundation
 def log(s):
-    Foundation.NSLog( "%s: %@", "PyeTV", str(s) ) 
+    Foundation.NSLog( u"%s: %@", "PyeTV", s ) 
     pass
 

@@ -26,7 +26,7 @@ verbose=0
 
 def log(s,level=1):
     if verbose >= level:
-        Foundation.NSLog( "%s: %@", "PyeTV", str(s) )
+        Foundation.NSLog( u"%s: %@", "PyeTV", s )
     pass
 
 
@@ -102,14 +102,14 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         return ret
 
     def GetSeriesMetadata(self, controller, series):
-        log(u"requested preview for series %s" % (series))
+        #log(u"requested preview for series %s" % series)
         if series not in self.series_dict.keys():
             return None
         ret=PyeTVPreviewMetadataController.alloc().initWithSeriesEpisode_(self.series_dict[series][0])
         return ret
 
     def GetChannelMetadata(self, controller, channel):
-        log("requested preview for channel %s" % str(channel))
+        #log(u"requested preview for channel %s" % str(channel))
         ret=PyeTVPreviewMetadataController.alloc().initWithChannel_(channel)
         return ret
 
@@ -161,7 +161,7 @@ class ETVMenuController(PyFR.MenuController.MenuController):
         return root
 
     def ConfirmDeleteRecordingDialog(self, controller, rec):
-        log("in confirm delete recordings dialog")
+        #log("in confirm delete recordings dialog")
         options=[ PyFR.OptionDialog.OptionItem(tr("Yes"),rec), 
                   PyFR.OptionDialog.OptionItem(tr("No"),rec) ]
         if isinstance(rec,list):
