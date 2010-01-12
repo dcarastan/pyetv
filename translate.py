@@ -2,7 +2,7 @@ import Foundation
 # -*- coding: utf-8 -*-
 
 languageCode=Foundation.NSUserDefaults.standardUserDefaults().objectForKey_('AppleLanguages')[0]
-#languageCode='es'
+#languageCode='de'
 
 translations={
     'da': # Danish
@@ -41,6 +41,44 @@ translations={
      "Next" : u"Næste",
      "Time" : u"Tid"
      },
+
+    'de': # German
+      {'Yes' : u'Ja',
+       'No'  : u'Nein',
+     
+       'Recordings by Series' : u'Aufnahmen',
+       'Favorite Channels' : u'Favoriten',
+       'All Channels' : u'Sender',
+       'Program Guide' : u'Programminfo',
+     
+       'Delete All' : u'Alle löschen',
+       'Play' : u'Wiedergabe fortsetzen',
+       'Restart' : u'Vom Anfang starten',
+       'Delete' : u'Löschen',
+     
+       'Delete Recording(s):' : u'Lösche Aufnahme(n)',
+     
+       'Are you sure you want to delete %d recordings from %s?' : u'Wirklich alle %s Aufnahme(n) von %s löschen?',
+       'Are you sure you want to delete' : u'Wirklich löschen ',
+     
+       'ComSkipper                      [Off]' : u'ComSkipper                [Off]',
+       'ComSkipper                       [On]' : u'ComSkipper                [On]',
+       #'Mark Commercials' : u'',
+       #"Mark Commercials    [Running]" : u'',
+
+
+       'Launching EyeTV' : u'EyeTV wird gestartet',
+       'Now Recording' : u'Aufnahme',
+       "Currently recording channel %s.  Program info is not available." : u'Nimmt %s auf.  Kein Programminfo.',
+     
+       'Episode' : u'Folge',
+       'Channel' : u'Sender',
+       'Position' : u'Position',
+       'Recorded at' : u'Aufgenommen am',
+       "Next" : u'Naechstes',
+       "At" : u'Am'
+
+       },
 
     'es':  # Spanish
     {'Yes' : u'Sí',
