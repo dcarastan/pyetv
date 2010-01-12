@@ -68,9 +68,10 @@ class PyeTVWaitController(PyFR.WaitController.WaitController, PyFR.Utilities.Con
                 log("calling PyeTVWaitController.startup()")
                 self.startup()
                 self.call_startup = False
-            except:
-                log("PyeTVWaitController.startup() failed")
-                pass
+            except Exception, details:
+                import traceback
+                info = traceback.format_exc()
+                log("PyeTVWaitController.startup() failed: %s" % info)
 
     def doShutdown(self):
         #ETV.HideWindows()

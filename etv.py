@@ -10,9 +10,14 @@ import PyFR.Utilities
 CURRENT_RECORDING=None
 verbose=0
 
+def ensure_str(s):
+    if isinstance(s, unicode):
+        return s.encode("utf-8")
+    return str(s)
+
 def log(s,level=1):
     if verbose >= level:
-        Foundation.NSLog( "%s: %@", "PyeTV", str(s))
+        Foundation.NSLog( "%s: %@", "PyeTV", ensure_str(s))
     pass
 
 class ETVChannel(PyFR.Utilities.ControllerUtilities):
