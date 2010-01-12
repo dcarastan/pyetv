@@ -2,7 +2,7 @@ import Foundation
 # -*- coding: utf-8 -*-
 
 languageCode=Foundation.NSUserDefaults.standardUserDefaults().objectForKey_('AppleLanguages')[0]
-#languageCode='de'
+#languageCode='fr'
 
 translations={
     'da': # Danish
@@ -74,9 +74,9 @@ translations={
        'Episode' : u'Folge',
        'Channel' : u'Sender',
        'Position' : u'Position',
-       'Recorded at' : u'Aufgenommen am',
-       "Next" : u'Naechstes',
-       "At" : u'Am'
+       'Recorded at' : u'Datum',
+       "Next" : u'Es folgt',
+       "Time" : u'Am'
 
        },
 
@@ -151,7 +151,7 @@ translations={
      'Position' : u'Sijainti',
      'Recorded at' : u'Tallennettu',
      "Next" : u'Seuraavana',
-     "At" : u'Aika'
+     "Time" : u'Aika'
      },
     
 
@@ -188,7 +188,7 @@ translations={
      'Position' : u'Position',
      'Recorded at' : u'Enregistrées à',
      "Next" : u"Prochain",
-     "At" : u"À"
+     "Time" : u"À"
      },
 
     'nl': # Dutch
@@ -224,7 +224,7 @@ translations={
        'Position' : u'Positie',
        'Recorded at' : u'Opgenomen op',
        "Next" : u'Volgende',
-       "At" : u'Om'
+       "Time" : u'Om'
        },
 
 # 'xx':
@@ -261,7 +261,7 @@ translations={
 #       'Position' : u'',
 #       'Recorded at' : u'',
 #       "Next" : u'',
-#       "At" : u''
+#       "Time" : u''
 
 #       },
 

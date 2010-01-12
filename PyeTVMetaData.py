@@ -113,7 +113,7 @@ class PyeTVMetadataPopulator(NSObject):
         labels=[
             tr("Next"),
             tr("Episode"),
-            tr("At")
+            tr("Time")
             ]
         data=[
             nextTitle,
