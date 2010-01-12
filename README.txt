@@ -1,5 +1,9 @@
 CHANGES:
 
+Version 2.5.1:
+
+   Oops.  Make sure translate.py makes it into distribution.  
+
 Version 2.5:
 
    Adding language translations: Danish, German, Spanish, Finnish, French, and Dutch.
