@@ -1,5 +1,11 @@
 CHANGES:
 
+Version 2.5:
+
+   Adding language translations: Danish, German, Spanish, Finnish, French, and Dutch.
+   Better handling of unicode strings so we hopefully won't crash on non-ascii characters
+   in Episode/Series titles.
+
 
 Version 2.0.1:
    Include missing installer on Snow Leopard.
