@@ -1,5 +1,5 @@
 NAME=PyeTV
-VERSION=2.5.1-SnowLeopard
+VERSION=2.6-Leopard
 IMGNAME=${NAME}-${VERSION}
 
 

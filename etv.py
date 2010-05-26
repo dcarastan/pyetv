@@ -3,6 +3,7 @@ import Foundation
 import AppKit
 from appscript import *
 import time
+import traceback
 
 import PyFR.Utilities
 
@@ -30,26 +31,28 @@ class ETVChannel(PyFR.Utilities.ControllerUtilities):
     def Play(self):
         global CURRENT_RECORDING
         CURRENT_RECORDING=None
-        log("Trying to play channel number %d" % self.chan.channel_number.get(),0)
-        ETV.HideWindows()
         try:
-            app("EyeTV").channel_change(channel_number = self.chan.channel_number.get())
+            log("Trying to play channel number %d" % self.chan.channel_number(),0)
+            ETV.HideWindows()
+            app("EyeTV").play()
+            app("EyeTV").channel_change(channel_number = self.chan.channel_number())
         except:
             # recording? channnel is busy & can't be changed
-            app("EyeTV").player_windows.get()[0].show()
+            log(traceback.format_exc())
+            app("EyeTV").player_windows()[0].show()
             pass
         ETV.EnterFullScreen()
 
     def GetProgramInfo(self):
         try:
-            app("EyeTV").player_windows.get()[0].show()
-            app("EyeTV").channel_change(channel_number = self.chan.channel_number.get())
-            app("EyeTV").player_windows.get()[0].close()
-            return False,app("EyeTV").player_windows.get()[0].program_info.get()
+            app("EyeTV").player_windows()[0].show()
+            app("EyeTV").channel_change(channel_number = self.chan.channel_number())
+            app("EyeTV").player_windows()[0].close()
+            return False,app("EyeTV").player_windows()[0].program_info()
         except:
             # recording? channnel is busy & can't be changed
             try:
-                info=app("EyeTV").player_windows.get()[0].program_info.get()
+                info=app("EyeTV").player_windows()[0].program_info()
                 return True, info
             except:
                 # index [0] could be out of range if no tuner
@@ -65,7 +68,7 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
     def GetTitle(self):
         log("GetTitle called")
         try:
-            ret=self.rec.title.get()
+            ret=self.rec.title()
             return ret
         except:
             return ""
@@ -73,7 +76,7 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
     def GetEpisode(self):
         log("GetEpisode called")
         try:
-            ret = self.rec.episode.get()
+            ret = self.rec.episode()
         except:
             return ""
         log("GetEpisode done")
@@ -89,7 +92,7 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
                 log("returning /tmp/screenshot.jpg")
                 return "/tmp/screenshot.jpg"
             else:
-                loc=self.rec.location.get()
+                loc=self.rec.location()
                 f=loc.file.path
                 f=f[:-6]+"tiff"
                 if len(f)>0:
@@ -101,14 +104,14 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
 
     def GetStartTime(self):
         try:
-            ret = self.rec.start_time.get()
+            ret = self.rec.start_time()
             return ret.strftime("%b %d %I:%M%p")
         except:
             return ""
 
     def GetDate(self):
         try:
-            return self.rec.start_time.get()
+            return self.rec.start_time()
         except:
             return ""
 
@@ -129,7 +132,7 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
     def GetPlaybackPosition(self, asString=False):
         log("GetPlaybackPosition called")
         try:
-            ret=self.rec.playback_position.get()
+            ret=self.rec.playback_position()
         except:
             return ""
         if not asString:
@@ -142,7 +145,7 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
     def GetDuration(self, asString=False):
         log("GetDuration called")
         try:
-            ret=self.rec.actual_duration.get()
+            ret=self.rec.actual_duration()
         except:
             return ""
         if not asString:
@@ -155,7 +158,7 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
     def GetDescription(self):
         log("GetDescription called")
         try:
-            ret = self.rec.description.get()
+            ret = self.rec.description()
         except:
             return ""
         log("GetDescription done")
@@ -164,7 +167,7 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
     def GetChannelStr(self):
         log("GetChannelStr called")
         try:
-            ret = str(self.rec.channel_number.get())  + " " + self.rec.station_name.get()
+            ret = str(self.rec.channel_number())  + " " + self.rec.station_name()
         except:
             return ""
         log("GetChannelStr done")
@@ -173,7 +176,7 @@ class ETVRecording(PyFR.Utilities.ControllerUtilities):
     def GetMarkerCount(self):
         log("GetMarkerCount called")
         try:
-            return len(self.rec.markers.get())
+            return len(self.rec.markers())
         except:
             return 0
 
@@ -190,7 +193,7 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
     def GetRecordings(self):
         log("GetRecordings called")
         for i in range(1,10):  
-            recs=app("EyeTV").recordings.get()
+            recs=app("EyeTV").recordings()
             if len(recs)>0:
                 break
             time.sleep(1)
@@ -218,13 +221,13 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
     def GetChannels(self):
         log("GetChannels called")
         for i in range(1,10):  
-            chan=app("EyeTV").channels.get()
+            chan=app("EyeTV").channels()
             if len(chan)>0:
                 break
             time.sleep(1)
         retval=[]
         for c in chan:
-            if c.enabled.get():
+            if c.enabled():
                 retval.append(ETVChannel(c))
         log("GetChannels done")
         return retval
@@ -234,12 +237,12 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
         log("GetFavoriteChannels called")
         chan=[]
         try:
-            chan=app("EyeTV").current_favorites_list.get().channels.get()
+            chan=app("EyeTV").current_favorites_list().channels()
         except:
             return []
         retval=[]
         for c in chan:
-            if c.enabled.get():
+            if c.enabled():
                 retval.append(ETVChannel(c))
         log("GetFavoriteChannels done")
         return retval
@@ -247,7 +250,7 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
     def IsPlaying(self):
         log("IsPlaying called")
         try:
-            ret=app("EyeTV").playing.get()
+            ret=app("EyeTV").playing()
             log("got ret" + str(ret))
         except:
             return false
@@ -259,17 +262,17 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
 
     def NotShowingMenu(self):
         log("NotShowingMenu called")
-        ret=app("EyeTV").full_screen_menu.get()
+        ret=app("EyeTV").full_screen_menu()
         return not ret
 
     def ShowingMenu(self):
         log("ShowingMenu called")
-        ret=app("EyeTV").full_screen_menu.get()
+        ret=app("EyeTV").full_screen_menu()
         return ret
 
     def IsFullScreen(self):
 #        log("IsFullScreen called")
-        ret=app("EyeTV").full_screen.get()
+        ret=app("EyeTV").full_screen()
 #        log("IsFullScreen done")
         return ret
         
@@ -318,7 +321,7 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
            log("ETV: in HideWindows")
            app("EyeTV").controller_window.hide()
            app("EyeTV").programs_window.hide()
-           wins=app("EyeTV").player_windows.get()
+           wins=app("EyeTV").player_windows()
            for w in wins:
                log("ETV closing window %s" % str(w))
                w.hide()
@@ -365,12 +368,12 @@ class EyeTV(PyFR.Utilities.ControllerUtilities):
 
     def IsRecording(self):
         log("IsRecording called")
-        return app("EyeTV").is_recording.get()
+        return app("EyeTV").is_recording()
 
     def RecordingChannelName(self):
         if not self.IsRecording():
             return None
-        return app("EyeTV").current_channel.get()
+        return app("EyeTV").current_channel()
 
 
     # this was only used to update the screenshot of the current recording
